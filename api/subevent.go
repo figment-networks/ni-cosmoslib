@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"strings"
 
 	codec_types "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/types"
@@ -11,7 +12,17 @@ import (
 	"github.com/figment-networks/ni-cosmoslib/api/mapper"
 )
 
-func AddSubEvent(msgRoute, msgType string, tev *structs.TransactionEvent, m *codec_types.Any, lg types.ABCIMessageLog) (err error) {
+// AddSubEvent converts a cosmos event from the log to a Subevent type and adds it to the provided TransactionEvent struct
+func AddSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.ABCIMessageLog) (err error) {
+	// TypeUrl must be in the format "/cosmos.bank.v1beta1.MsgSend"
+	tPath := strings.Split(m.TypeUrl, ".")
+	if len(tPath) != 4 {
+		return fmt.Errorf("problem with cosmos event cosmos event %s: %w", m.TypeUrl, ErrUnknownMessageType)
+	}
+
+	msgType := tPath[3]
+	msgRoute := tPath[1]
+
 	var ev structs.SubsetEvent
 	switch msgRoute {
 	case "bank":
@@ -21,14 +32,14 @@ func AddSubEvent(msgRoute, msgType string, tev *structs.TransactionEvent, m *cod
 		case "MsgMultiSend":
 			ev, err = mapper.BankMultisendToSub(m.Value, lg)
 		default:
-			err = fmt.Errorf("problem with %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
+			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "crisis":
 		switch msgType {
 		case "MsgVerifyInvariant":
 			ev, err = mapper.CrisisVerifyInvariantToSub(m.Value)
 		default:
-			err = fmt.Errorf("problem with %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
+			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "distribution":
 		switch msgType {
@@ -41,14 +52,14 @@ func AddSubEvent(msgRoute, msgType string, tev *structs.TransactionEvent, m *cod
 		case "MsgFundCommunityPool":
 			ev, err = mapper.DistributionFundCommunityPoolToSub(m.Value)
 		default:
-			err = fmt.Errorf("problem with %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
+			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "evidence":
 		switch msgType {
 		case "MsgSubmitEvidence":
 			ev, err = mapper.EvidenceSubmitEvidenceToSub(m.Value)
 		default:
-			err = fmt.Errorf("problem with %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
+			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "gov":
 		switch msgType {
@@ -59,21 +70,21 @@ func AddSubEvent(msgRoute, msgType string, tev *structs.TransactionEvent, m *cod
 		case "MsgSubmitProposal":
 			ev, err = mapper.GovSubmitProposalToSub(m.Value, lg)
 		default:
-			err = fmt.Errorf("problem with %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
+			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "slashing":
 		switch msgType {
 		case "MsgUnjail":
 			ev, err = mapper.SlashingUnjailToSub(m.Value)
 		default:
-			err = fmt.Errorf("problem with %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
+			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "vesting":
 		switch msgType {
 		case "MsgCreateVestingAccount":
 			ev, err = mapper.VestingMsgCreateVestingAccountToSub(m.Value, lg)
 		default:
-			err = fmt.Errorf("problem with %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
+			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "staking":
 		switch msgType {
@@ -88,10 +99,10 @@ func AddSubEvent(msgRoute, msgType string, tev *structs.TransactionEvent, m *cod
 		case "MsgBeginRedelegate":
 			ev, err = mapper.StakingBeginRedelegateToSub(m.Value, lg)
 		default:
-			err = fmt.Errorf("problem with %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
+			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	default:
-		err = fmt.Errorf("problem with %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
+		err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 	}
 
 	if len(ev.Type) > 0 {
@@ -101,8 +112,17 @@ func AddSubEvent(msgRoute, msgType string, tev *structs.TransactionEvent, m *cod
 	return err
 }
 
-func AddIBCSubEvent(msgRoute, msgType string, tev *structs.TransactionEvent, m *codec_types.Any, lg types.ABCIMessageLog) (err error) {
+// AddIBCSubEvent converts an ibc event from the log to a Subevent type and adds it to the provided TransactionEvent struct
+func AddIBCSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.ABCIMessageLog) (err error) {
 	var ev structs.SubsetEvent
+	// TypeUrl must be in the format "/ibc.core.client.v1.MsgCreateClient"
+	tPath := strings.Split(m.TypeUrl, ".")
+	if len(tPath) != 5 {
+		return fmt.Errorf("problem with ibc event ibc event %s: %w", m.TypeUrl, ErrUnknownMessageType)
+	}
+
+	msgType := tPath[3]
+	msgRoute := tPath[1]
 
 	switch msgRoute {
 	case "client":
@@ -116,7 +136,7 @@ func AddIBCSubEvent(msgRoute, msgType string, tev *structs.TransactionEvent, m *
 		case "MsgSubmitMisbehaviour":
 			ev, err = ibc_mapper.IBCSubmitMisbehaviourToSub(m.Value)
 		default:
-			err = fmt.Errorf("problem with %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
+			err = fmt.Errorf("problem with ibc event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "connection":
 		switch msgType {
@@ -129,7 +149,7 @@ func AddIBCSubEvent(msgRoute, msgType string, tev *structs.TransactionEvent, m *
 		case "MsgConnectionOpenTry":
 			ev, err = ibc_mapper.IBCConnectionOpenTryToSub(m.Value)
 		default:
-			err = fmt.Errorf("problem with %s - %s:  %w", msgRoute, msgType, ErrUnknownMessageType)
+			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "channel":
 		switch msgType {
@@ -153,17 +173,17 @@ func AddIBCSubEvent(msgRoute, msgType string, tev *structs.TransactionEvent, m *
 			ev, err = ibc_mapper.IBCChannelAcknowledgementToSub(m.Value)
 
 		default:
-			err = fmt.Errorf("problem with %s - %s:  %w", msgRoute, msgType, ErrUnknownMessageType)
+			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "transfer":
 		switch msgType {
 		case "MsgTransfer":
 			ev, err = ibc_mapper.IBCTransferToSub(m.Value)
 		default:
-			err = fmt.Errorf("problem with %s - %s:  %w", msgRoute, msgType, ErrUnknownMessageType)
+			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	default:
-		err = fmt.Errorf("problem with %s - %s:  %w", msgRoute, msgType, ErrUnknownMessageType)
+		err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, ErrUnknownMessageType)
 	}
 
 	if len(ev.Type) > 0 {
