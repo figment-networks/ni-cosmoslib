@@ -121,8 +121,8 @@ func AddIBCSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.
 		return fmt.Errorf("problem with ibc event ibc event %s: %w", m.TypeUrl, ErrUnknownMessageType)
 	}
 
-	msgType := tPath[4]
-	msgRoute := tPath[2]
+	msgType := tPath[3]
+	msgRoute := tPath[1]
 
 	switch msgRoute {
 	case "client":
