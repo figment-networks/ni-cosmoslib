@@ -10,8 +10,8 @@ import (
 func TestIBCChannelRecvPacketToSub(t *testing.T) {
 
 	// Just test that the proof commitment is actually being encoded as base64.
-	proofCommitment := "aa\u0000\u0000bb"
-	msg := channel.MsgRecvPacket{ProofCommitment: []byte(proofCommitment)}
+	proofCommitment := []byte("aa\u0000\u0000bb")
+	msg := channel.MsgRecvPacket{ProofCommitment: proofCommitment}
 	bMsg, err := msg.Marshal()
 	if err != nil {
 		t.Errorf("unexpected marshal err: %s", err.Error())
