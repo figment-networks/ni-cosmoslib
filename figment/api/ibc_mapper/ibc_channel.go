@@ -1,8 +1,6 @@
 package mapper
 
 import (
-	"bytes"
-	"encoding/base64"
 	"fmt"
 	"strconv"
 
@@ -166,13 +164,10 @@ func IBCChannelRecvPacketToSub(msg []byte) (se shared.SubsetEvent, err error) {
 		return se, fmt.Errorf("Not a recv_packet type: %w", err)
 	}
 
-	// The proof_commitment field can contain null bytes. This data will end up getting written to postgres
-	// as a JSONB type. Postgres does not support null bytes in JSONB data types. In order to write this
-	// to the database while preserving the original value, encode it as base64.
-	proofCommitmentBuff := bytes.NewBuffer([]byte{})
-	b64Enc := base64.NewEncoder(base64.StdEncoding, proofCommitmentBuff)
-	if _, err := b64Enc.Write(m.ProofCommitment); err != nil {
-		return se, fmt.Errorf("Could not encode proof_commitment: %w", err)
+	// Encode fields that can contain null bytes.
+	proofCommitment, err := encodeToB64(m.ProofCommitment, "proof_commitment")
+	if err != nil {
+		return se, err
 	}
 
 	return shared.SubsetEvent{
@@ -191,7 +186,7 @@ func IBCChannelRecvPacketToSub(msg []byte) (se shared.SubsetEvent, err error) {
 			"packet_timeout_height_revision_number": {strconv.FormatUint(m.Packet.TimeoutHeight.RevisionNumber, 10)},
 			"packet_timeout_height_revision_height": {strconv.FormatUint(m.Packet.TimeoutHeight.RevisionHeight, 10)},
 			"packet_timeout_stamp":                  {strconv.FormatUint(m.Packet.TimeoutTimestamp, 10)},
-			"proof_commitment":                      {proofCommitmentBuff.String()},
+			"proof_commitment":                      {proofCommitment},
 			"proof_height_revision_number":          {strconv.FormatUint(m.ProofHeight.RevisionNumber, 10)},
 			"proof_height_revision_height":          {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
 		},
@@ -236,6 +231,12 @@ func IBCChannelAcknowledgementToSub(msg []byte) (se shared.SubsetEvent, err erro
 		return se, fmt.Errorf("Not a channel_acknowledgement type: %w", err)
 	}
 
+	// Encode fields that can contain null bytes.
+	proofAcked, err := encodeToB64(m.ProofAcked, "proof_acked")
+	if err != nil {
+		return se, err
+	}
+
 	return shared.SubsetEvent{
 		Type:   []string{"channel_acknowledgement"},
 		Module: "ibc",
@@ -253,7 +254,7 @@ func IBCChannelAcknowledgementToSub(msg []byte) (se shared.SubsetEvent, err erro
 			"packet_timeout_height_revision_height": {strconv.FormatUint(m.Packet.TimeoutHeight.RevisionHeight, 10)},
 			"packet_timeout_stamp":                  {strconv.FormatUint(m.Packet.TimeoutTimestamp, 10)},
 			"acknowledgement":                       {string(m.Acknowledgement)},
-			"proof_acked":                           {string(m.ProofAcked)},
+			"proof_acked":                           {proofAcked},
 			"proof_height_revision_number":          {strconv.FormatUint(m.ProofHeight.RevisionNumber, 10)},
 			"proof_height_revision_height":          {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
 		},
