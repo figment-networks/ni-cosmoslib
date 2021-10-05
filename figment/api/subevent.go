@@ -25,6 +25,21 @@ func AddSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.ABC
 
 	var ev structs.SubsetEvent
 	switch msgRoute {
+	case "authz":
+		switch msgType {
+		case "MsgGrant":
+			ev, err = mapper.AuthzGrantToSub(m.Value)
+		case "MsgExecResponse":
+			ev, err = mapper.AuthzExecResponseToSub(m.Value)
+		case "MsgExec":
+			ev, err = mapper.AuthzExecToSub(m.Value)
+		case "MsgGrantResponse":
+			ev, err = mapper.AuthzGrantResponseToSub(m.Value)
+		case "MsgRevoke":
+			ev, err = mapper.AuthzMsgRevokeToSub(m.Value)
+		default:
+			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
+		}
 	case "bank":
 		switch msgType {
 		case "MsgSend":
@@ -58,6 +73,19 @@ func AddSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.ABC
 		switch msgType {
 		case "MsgSubmitEvidence":
 			ev, err = mapper.EvidenceSubmitEvidenceToSub(m.Value)
+		default:
+			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
+		}
+	case "feegrant":
+		switch msgType {
+		case "MsgGrantAllowance":
+			ev, err = mapper.FeegrantGrantAllowance(m.Value)
+		case "MsgGrantAllowanceResponse":
+			ev, err = mapper.FeegrantGrantAllowanceResponse(m.Value)
+		case "MsgRevokeAllowance":
+			ev, err = mapper.FeegrantRevokeAllowance(m.Value)
+		case "MsgRevokeAllowanceResponse":
+			ev, err = mapper.FeegrantRevokeAllowanceResponse(m.Value)
 		default:
 			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
