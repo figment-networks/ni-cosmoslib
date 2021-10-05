@@ -42,6 +42,12 @@ func IBCConnectionOpenConfirmToSub(msg []byte) (se shared.SubsetEvent, err error
 		return se, fmt.Errorf("Not a connection_open_confirm type: %w", err)
 	}
 
+	// Encode fields that can contain null bytes.
+	proofAck, err := encodeToB64(m.ProofAck, "proof_ack")
+	if err != nil {
+		return se, err
+	}
+
 	return shared.SubsetEvent{
 		Type:   []string{"connection_open_confirm"},
 		Module: "ibc",
@@ -50,7 +56,7 @@ func IBCConnectionOpenConfirmToSub(msg []byte) (se shared.SubsetEvent, err error
 		},
 		Additional: map[string][]string{
 			"connection_id":                {m.ConnectionId},
-			"proof_ack":                    {string(m.ProofAck)},
+			"proof_ack":                    {proofAck},
 			"proof_height_revision_number": {strconv.FormatUint(m.ProofHeight.RevisionNumber, 10)},
 			"proof_height_revision_height": {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
 		},
@@ -62,6 +68,20 @@ func IBCConnectionOpenAckToSub(msg []byte) (se shared.SubsetEvent, err error) {
 	m := &connection.MsgConnectionOpenAck{}
 	if err := proto.Unmarshal(msg, m); err != nil {
 		return se, fmt.Errorf("Not a connection_open_ack type: %w", err)
+	}
+
+	// Encode fields that can contain null bytes.
+	proofTry, err := encodeToB64(m.ProofTry, "proof_try")
+	if err != nil {
+		return se, err
+	}
+	proofClient, err := encodeToB64(m.ProofClient, "proof_client")
+	if err != nil {
+		return se, err
+	}
+	proofConsensus, err := encodeToB64(m.ProofConsensus, "proof_consensus")
+	if err != nil {
+		return se, err
 	}
 
 	return shared.SubsetEvent{
@@ -78,9 +98,9 @@ func IBCConnectionOpenAckToSub(msg []byte) (se shared.SubsetEvent, err error) {
 			"client_state":                     {m.ClientState.String()},
 			"proof_height_revision_number":     {strconv.FormatUint(m.ProofHeight.RevisionNumber, 10)},
 			"proof_height_revision_height":     {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
-			"proof_try":                        {string(m.ProofTry)},
-			"proof_client":                     {string(m.ProofClient)},
-			"proof_consensus":                  {string(m.ProofConsensus)},
+			"proof_try":                        {proofTry},
+			"proof_client":                     {proofClient},
+			"proof_consensus":                  {proofConsensus},
 			"consensus_height_revision_number": {strconv.FormatUint(m.ConsensusHeight.RevisionNumber, 10)},
 			"consensus_height_revision_height": {strconv.FormatUint(m.ConsensusHeight.RevisionHeight, 10)},
 		},
@@ -92,6 +112,20 @@ func IBCConnectionOpenTryToSub(msg []byte) (se shared.SubsetEvent, err error) {
 	m := &connection.MsgConnectionOpenTry{}
 	if err := proto.Unmarshal(msg, m); err != nil {
 		return se, fmt.Errorf("Not a connection_open_try type: %w", err)
+	}
+
+	// Encode fields that can contain null bytes.
+	proofInit, err := encodeToB64(m.ProofInit, "proof_init")
+	if err != nil {
+		return se, err
+	}
+	proofClient, err := encodeToB64(m.ProofClient, "proof_client")
+	if err != nil {
+		return se, err
+	}
+	proofConsensus, err := encodeToB64(m.ProofConsensus, "proof_consensus")
+	if err != nil {
+		return se, err
 	}
 
 	se = shared.SubsetEvent{
@@ -111,9 +145,9 @@ func IBCConnectionOpenTryToSub(msg []byte) (se shared.SubsetEvent, err error) {
 			"counterparty_versions":            {},
 			"proof_height_revision_number":     {strconv.FormatUint(m.ProofHeight.RevisionNumber, 10)},
 			"proof_height_revision_height":     {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
-			"proof_init":                       {string(m.ProofInit)},
-			"proof_client":                     {string(m.ProofClient)},
-			"proof_consensus":                  {string(m.ProofConsensus)},
+			"proof_init":                       {proofInit},
+			"proof_client":                     {proofClient},
+			"proof_consensus":                  {proofConsensus},
 			"consensus_height_revision_number": {strconv.FormatUint(m.ConsensusHeight.RevisionNumber, 10)},
 			"consensus_height_revision_height": {strconv.FormatUint(m.ConsensusHeight.RevisionHeight, 10)},
 		},

@@ -43,6 +43,12 @@ func IBCChannelOpenConfirmToSub(msg []byte) (se shared.SubsetEvent, err error) {
 		return se, fmt.Errorf("Not a channel_open_confirm type: %w", err)
 	}
 
+	// Encode fields that can contain null bytes.
+	proofAck, err := encodeToB64(m.ProofAck, "proof_ack")
+	if err != nil {
+		return se, err
+	}
+
 	return shared.SubsetEvent{
 		Type:   []string{"channel_open_confirm"},
 		Module: "ibc",
@@ -52,7 +58,7 @@ func IBCChannelOpenConfirmToSub(msg []byte) (se shared.SubsetEvent, err error) {
 		Additional: map[string][]string{
 			"port_id":                      {m.PortId},
 			"channel_id":                   {m.ChannelId},
-			"proof_ack":                    {string(m.ProofAck)},
+			"proof_ack":                    {proofAck},
 			"proof_height_revision_number": {strconv.FormatUint(m.ProofHeight.RevisionNumber, 10)},
 			"proof_height_revision_height": {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
 		},
@@ -66,6 +72,12 @@ func IBCChannelOpenAckToSub(msg []byte) (se shared.SubsetEvent, err error) {
 		return se, fmt.Errorf("Not a channel_open_ack type: %w", err)
 	}
 
+	// Encode fields that can contain null bytes.
+	proofTry, err := encodeToB64(m.ProofTry, "proof_try")
+	if err != nil {
+		return se, err
+	}
+
 	return shared.SubsetEvent{
 		Type:   []string{"channel_open_ack"},
 		Module: "ibc",
@@ -77,7 +89,7 @@ func IBCChannelOpenAckToSub(msg []byte) (se shared.SubsetEvent, err error) {
 			"channel_id":                   {m.ChannelId},
 			"counterparty_channel_id":      {m.CounterpartyChannelId},
 			"counterparty_version":         {m.CounterpartyVersion},
-			"proof_try":                    {string(m.ProofTry)},
+			"proof_try":                    {proofTry},
 			"proof_height_revision_number": {strconv.FormatUint(m.ProofHeight.RevisionNumber, 10)},
 			"proof_height_revision_height": {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
 		},
@@ -89,6 +101,12 @@ func IBCChannelOpenTryToSub(msg []byte) (se shared.SubsetEvent, err error) {
 	m := &channel.MsgChannelOpenTry{}
 	if err := proto.Unmarshal(msg, m); err != nil {
 		return se, fmt.Errorf("Not a channel_open_try type: %w", err)
+	}
+
+	// Encode fields that can contain null bytes.
+	proofInit, err := encodeToB64(m.ProofInit, "proof_init")
+	if err != nil {
+		return se, err
 	}
 
 	return shared.SubsetEvent{
@@ -107,7 +125,7 @@ func IBCChannelOpenTryToSub(msg []byte) (se shared.SubsetEvent, err error) {
 			"channel_connection_hops":         m.Channel.ConnectionHops,
 			"channel_version":                 {m.Channel.Version},
 			"counterparty_version":            {m.CounterpartyVersion},
-			"proof_init":                      {string(m.ProofInit)},
+			"proof_init":                      {proofInit},
 			"proof_height_revision_number":    {strconv.FormatUint(m.ProofHeight.RevisionNumber, 10)},
 			"proof_height_revision_height":    {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
 		},
@@ -141,6 +159,12 @@ func IBCChannelCloseConfirmToSub(msg []byte) (se shared.SubsetEvent, err error) 
 		return se, fmt.Errorf("Not a channel_close_confirm type: %w", err)
 	}
 
+	// Encode fields that can contain null bytes.
+	proofInit, err := encodeToB64(m.ProofInit, "proof_init")
+	if err != nil {
+		return se, err
+	}
+
 	return shared.SubsetEvent{
 		Type:   []string{"channel_close_confirm"},
 		Module: "ibc",
@@ -150,7 +174,7 @@ func IBCChannelCloseConfirmToSub(msg []byte) (se shared.SubsetEvent, err error) 
 		Additional: map[string][]string{
 			"port_id":                      {m.PortId},
 			"channel_id":                   {m.ChannelId},
-			"proof_init":                   {string(m.ProofInit)},
+			"proof_init":                   {proofInit},
 			"proof_height_revision_number": {strconv.FormatUint(m.ProofHeight.RevisionNumber, 10)},
 			"proof_height_revision_height": {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
 		},
@@ -200,6 +224,12 @@ func IBCChannelTimeoutToSub(msg []byte) (se shared.SubsetEvent, err error) {
 		return se, fmt.Errorf("Not a timeout type: %w", err)
 	}
 
+	// Encode fields that can contain null bytes.
+	proofUnreceived, err := encodeToB64(m.ProofUnreceived, "proof_unreceived")
+	if err != nil {
+		return se, err
+	}
+
 	return shared.SubsetEvent{
 		Type:   []string{"timeout"},
 		Module: "ibc",
@@ -216,7 +246,7 @@ func IBCChannelTimeoutToSub(msg []byte) (se shared.SubsetEvent, err error) {
 			"packet_timeout_height_revision_number": {strconv.FormatUint(m.Packet.TimeoutHeight.RevisionNumber, 10)},
 			"packet_timeout_height_revision_height": {strconv.FormatUint(m.Packet.TimeoutHeight.RevisionHeight, 10)},
 			"packet_timeout_stamp":                  {strconv.FormatUint(m.Packet.TimeoutTimestamp, 10)},
-			"proof_unreceived":                      {string(m.ProofUnreceived)},
+			"proof_unreceived":                      {proofUnreceived},
 			"proof_height_revision_number":          {strconv.FormatUint(m.ProofHeight.RevisionNumber, 10)},
 			"proof_height_revision_height":          {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
 			"next_sequence_recv":                    {strconv.FormatUint(m.NextSequenceRecv, 10)},

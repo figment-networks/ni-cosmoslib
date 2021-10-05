@@ -57,6 +57,16 @@ func IBCUpgradeClientToSub(msg []byte) (se shared.SubsetEvent, err error) {
 		return se, fmt.Errorf("Not a upgrade_client type: %w", err)
 	}
 
+	// Encode fields that can contain null bytes.
+	proofUpgradeClient, err := encodeToB64(m.ProofUpgradeClient, "proof_upgrade_client")
+	if err != nil {
+		return se, err
+	}
+	proofUpgradeConsensusState, err := encodeToB64(m.ProofUpgradeConsensusState, "proof_upgrade_consensus_state")
+	if err != nil {
+		return se, err
+	}
+
 	return shared.SubsetEvent{
 		Type:   []string{"upgrade_client"},
 		Module: "ibc",
@@ -67,8 +77,8 @@ func IBCUpgradeClientToSub(msg []byte) (se shared.SubsetEvent, err error) {
 			"client_id":                     {m.ClientId},
 			"client_state":                  {m.ClientState.String()},
 			"consensus_state":               {m.ConsensusState.String()},
-			"proof_upgrade_client":          {string(m.ProofUpgradeClient)},
-			"proof_upgrade_consensus_state": {string(m.ProofUpgradeConsensusState)},
+			"proof_upgrade_client":          {proofUpgradeClient},
+			"proof_upgrade_consensus_state": {proofUpgradeConsensusState},
 		},
 	}, nil
 }
