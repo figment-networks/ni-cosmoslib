@@ -37,6 +37,8 @@ func AddSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.ABC
 			ev, err = mapper.AuthzGrantResponseToSub(m.Value)
 		case "MsgRevoke":
 			ev, err = mapper.AuthzMsgRevokeToSub(m.Value)
+		case "MsgRevokeResponse":
+			ev, err = mapper.AuthzMsgRevokeResponseToSub(m.Value)
 		default:
 			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}

@@ -99,3 +99,16 @@ func AuthzMsgRevokeToSub(msg []byte) (se structs.SubsetEvent, err error) {
 		},
 	}, nil
 }
+
+// AuthzMsgRevokeResponseToSub transforms authz.MsgRevokeResponse sdk messages to SubsetEvent
+func AuthzMsgRevokeResponseToSub(msg []byte) (se structs.SubsetEvent, err error) {
+	m := &authz.MsgRevokeResponse{}
+	if err := proto.Unmarshal(msg, m); err != nil {
+		return se, fmt.Errorf("Not a revoke_response type: %w", err)
+	}
+
+	return structs.SubsetEvent{
+		Type:   []string{"revoke_response"},
+		Module: "authz",
+	}, nil
+}
