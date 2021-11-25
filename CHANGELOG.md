@@ -1,5 +1,13 @@
 # Change Log
 
+## 0.0.1-rc4
+
+
+### Added
+### Changed
+### Fixed
+- nil pointer exception in distribution
+
 ## 0.0.1-rc2
 
 ### Added

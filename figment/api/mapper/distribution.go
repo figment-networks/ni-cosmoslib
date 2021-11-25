@@ -2,6 +2,7 @@ package mapper
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/figment-networks/indexing-engine/structs"
 
@@ -100,6 +101,7 @@ func distributionProduceEvTx(account string, coins types.Coins) (evt structs.Eve
 			txa := structs.TransactionAmount{
 				Currency: coin.Denom,
 				Text:     coin.Amount.String(),
+				Numeric:  &big.Int{},
 			}
 
 			txa.Numeric.Set(coin.Amount.BigInt())
