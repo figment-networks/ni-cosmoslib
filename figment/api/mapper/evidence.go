@@ -13,7 +13,7 @@ import (
 )
 
 // EvidenceSubmitEvidenceToSub transforms evidence.MsgSubmitEvidence sdk messages to SubsetEvent
-func EvidenceSubmitEvidenceToSub(msg []byte) (se structs.SubsetEvent, er error) {
+func (mapper *Mapper) EvidenceSubmitEvidenceToSub(msg []byte) (se structs.SubsetEvent, er error) {
 	mse := &evidence.MsgSubmitEvidence{}
 	if err := proto.Unmarshal(msg, mse); err != nil {
 		return se, fmt.Errorf("Not a submit_evidence type: %w", err)

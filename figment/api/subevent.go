@@ -12,12 +12,18 @@ import (
 	"github.com/figment-networks/ni-cosmoslib/figment/api/mapper"
 )
 
+var defaultMapper = &mapper.Mapper{}
+
 // AddSubEvent converts a cosmos event from the log to a Subevent type and adds it to the provided TransactionEvent struct
-func AddSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.ABCIMessageLog) (err error) {
+func AddSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.ABCIMessageLog, ma *mapper.Mapper) (err error) {
 	// TypeUrl must be in the format "/cosmos.bank.v1beta1.MsgSend"
 	tPath := strings.Split(m.TypeUrl, ".")
 	if len(tPath) != 4 {
 		return fmt.Errorf("problem with cosmos event cosmos event %s: %w", m.TypeUrl, ErrUnknownMessageType)
+	}
+	// for mapper = nil use the default
+	if ma == nil {
+		ma = defaultMapper
 	}
 
 	msgType := tPath[3]
@@ -28,106 +34,106 @@ func AddSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.ABC
 	case "authz":
 		switch msgType {
 		case "MsgGrant":
-			ev, err = mapper.AuthzGrantToSub(m.Value)
+			ev, err = ma.AuthzGrantToSub(m.Value)
 		case "MsgExecResponse":
-			ev, err = mapper.AuthzExecResponseToSub(m.Value)
+			ev, err = ma.AuthzExecResponseToSub(m.Value)
 		case "MsgExec":
-			ev, err = mapper.AuthzExecToSub(m.Value)
+			ev, err = ma.AuthzExecToSub(m.Value)
 		case "MsgGrantResponse":
-			ev, err = mapper.AuthzGrantResponseToSub(m.Value)
+			ev, err = ma.AuthzGrantResponseToSub(m.Value)
 		case "MsgRevoke":
-			ev, err = mapper.AuthzMsgRevokeToSub(m.Value)
+			ev, err = ma.AuthzMsgRevokeToSub(m.Value)
 		case "MsgRevokeResponse":
-			ev, err = mapper.AuthzMsgRevokeResponseToSub(m.Value)
+			ev, err = ma.AuthzMsgRevokeResponseToSub(m.Value)
 		default:
 			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "bank":
 		switch msgType {
 		case "MsgSend":
-			ev, err = mapper.BankSendToSub(m.Value, lg)
+			ev, err = ma.BankSendToSub(m.Value, lg)
 		case "MsgMultiSend":
-			ev, err = mapper.BankMultisendToSub(m.Value, lg)
+			ev, err = ma.BankMultisendToSub(m.Value, lg)
 		default:
 			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "crisis":
 		switch msgType {
 		case "MsgVerifyInvariant":
-			ev, err = mapper.CrisisVerifyInvariantToSub(m.Value)
+			ev, err = ma.CrisisVerifyInvariantToSub(m.Value)
 		default:
 			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "distribution":
 		switch msgType {
 		case "MsgWithdrawValidatorCommission":
-			ev, err = mapper.DistributionWithdrawValidatorCommissionToSub(m.Value, lg)
+			ev, err = ma.DistributionWithdrawValidatorCommissionToSub(m.Value, lg)
 		case "MsgSetWithdrawAddress":
-			ev, err = mapper.DistributionSetWithdrawAddressToSub(m.Value)
+			ev, err = ma.DistributionSetWithdrawAddressToSub(m.Value)
 		case "MsgWithdrawDelegatorReward":
-			ev, err = mapper.DistributionWithdrawDelegatorRewardToSub(m.Value, lg)
+			ev, err = ma.DistributionWithdrawDelegatorRewardToSub(m.Value, lg)
 		case "MsgFundCommunityPool":
-			ev, err = mapper.DistributionFundCommunityPoolToSub(m.Value)
+			ev, err = ma.DistributionFundCommunityPoolToSub(m.Value)
 		default:
 			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "evidence":
 		switch msgType {
 		case "MsgSubmitEvidence":
-			ev, err = mapper.EvidenceSubmitEvidenceToSub(m.Value)
+			ev, err = ma.EvidenceSubmitEvidenceToSub(m.Value)
 		default:
 			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "feegrant":
 		switch msgType {
 		case "MsgGrantAllowance":
-			ev, err = mapper.FeegrantGrantAllowance(m.Value)
+			ev, err = ma.FeegrantGrantAllowance(m.Value)
 		case "MsgGrantAllowanceResponse":
-			ev, err = mapper.FeegrantGrantAllowanceResponse(m.Value)
+			ev, err = ma.FeegrantGrantAllowanceResponse(m.Value)
 		case "MsgRevokeAllowance":
-			ev, err = mapper.FeegrantRevokeAllowance(m.Value)
+			ev, err = ma.FeegrantRevokeAllowance(m.Value)
 		case "MsgRevokeAllowanceResponse":
-			ev, err = mapper.FeegrantRevokeAllowanceResponse(m.Value)
+			ev, err = ma.FeegrantRevokeAllowanceResponse(m.Value)
 		default:
 			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "gov":
 		switch msgType {
 		case "MsgDeposit":
-			ev, err = mapper.GovDepositToSub(m.Value, lg)
+			ev, err = ma.GovDepositToSub(m.Value, lg)
 		case "MsgVote":
-			ev, err = mapper.GovVoteToSub(m.Value)
+			ev, err = ma.GovVoteToSub(m.Value)
 		case "MsgSubmitProposal":
-			ev, err = mapper.GovSubmitProposalToSub(m.Value, lg)
+			ev, err = ma.GovSubmitProposalToSub(m.Value, lg)
 		default:
 			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "slashing":
 		switch msgType {
 		case "MsgUnjail":
-			ev, err = mapper.SlashingUnjailToSub(m.Value)
+			ev, err = ma.SlashingUnjailToSub(m.Value)
 		default:
 			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "vesting":
 		switch msgType {
 		case "MsgCreateVestingAccount":
-			ev, err = mapper.VestingMsgCreateVestingAccountToSub(m.Value, lg)
+			ev, err = ma.VestingMsgCreateVestingAccountToSub(m.Value, lg)
 		default:
 			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}
 	case "staking":
 		switch msgType {
 		case "MsgUndelegate":
-			ev, err = mapper.StakingUndelegateToSub(m.Value, lg)
+			ev, err = ma.StakingUndelegateToSub(m.Value, lg)
 		case "MsgEditValidator":
-			ev, err = mapper.StakingEditValidatorToSub(m.Value)
+			ev, err = ma.StakingEditValidatorToSub(m.Value)
 		case "MsgCreateValidator":
-			ev, err = mapper.StakingCreateValidatorToSub(m.Value)
+			ev, err = ma.StakingCreateValidatorToSub(m.Value)
 		case "MsgDelegate":
-			ev, err = mapper.StakingDelegateToSub(m.Value, lg)
+			ev, err = ma.StakingDelegateToSub(m.Value, lg)
 		case "MsgBeginRedelegate":
-			ev, err = mapper.StakingBeginRedelegateToSub(m.Value, lg)
+			ev, err = ma.StakingBeginRedelegateToSub(m.Value, lg)
 		default:
 			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
 		}

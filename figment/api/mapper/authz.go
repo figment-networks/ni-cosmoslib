@@ -10,7 +10,7 @@ import (
 )
 
 // AuthzGrantToSub transforms authz.MsgGrant sdk messages to SubsetEvent
-func AuthzGrantToSub(msg []byte) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) AuthzGrantToSub(msg []byte) (se structs.SubsetEvent, err error) {
 	m := &authz.MsgGrant{}
 	if err := proto.Unmarshal(msg, m); err != nil {
 		return se, fmt.Errorf("Not a grant type: %w", err)
@@ -29,7 +29,7 @@ func AuthzGrantToSub(msg []byte) (se structs.SubsetEvent, err error) {
 }
 
 // AuthzExecResponseToSub transforms authz.MsgExecResponse sdk messages to SubsetEvent
-func AuthzExecResponseToSub(msg []byte) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) AuthzExecResponseToSub(msg []byte) (se structs.SubsetEvent, err error) {
 	m := &authz.MsgExecResponse{}
 	if err := proto.Unmarshal(msg, m); err != nil {
 		return se, fmt.Errorf("Not a exec_response type: %w", err)
@@ -48,7 +48,7 @@ func AuthzExecResponseToSub(msg []byte) (se structs.SubsetEvent, err error) {
 }
 
 // AuthzExecToSub transforms authz.MsgExec sdk messages to SubsetEvent
-func AuthzExecToSub(msg []byte) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) AuthzExecToSub(msg []byte) (se structs.SubsetEvent, err error) {
 	m := &authz.MsgExec{}
 	if err := proto.Unmarshal(msg, m); err != nil {
 		return se, fmt.Errorf("Not a exec type: %w", err)
@@ -70,7 +70,7 @@ func AuthzExecToSub(msg []byte) (se structs.SubsetEvent, err error) {
 }
 
 // AuthzGrantResponseToSub transforms authz.MsgGrantResponse sdk messages to SubsetEvent
-func AuthzGrantResponseToSub(msg []byte) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) AuthzGrantResponseToSub(msg []byte) (se structs.SubsetEvent, err error) {
 	m := &authz.MsgGrantResponse{}
 	if err := proto.Unmarshal(msg, m); err != nil {
 		return se, fmt.Errorf("Not a grant_response type: %w", err)
@@ -83,7 +83,7 @@ func AuthzGrantResponseToSub(msg []byte) (se structs.SubsetEvent, err error) {
 }
 
 // AuthzMsgRevokeToSub transforms authz.MsgRevoke sdk messages to SubsetEvent
-func AuthzMsgRevokeToSub(msg []byte) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) AuthzMsgRevokeToSub(msg []byte) (se structs.SubsetEvent, err error) {
 	m := &authz.MsgRevoke{}
 	if err := proto.Unmarshal(msg, m); err != nil {
 		return se, fmt.Errorf("Not a revoke type: %w", err)
@@ -101,7 +101,7 @@ func AuthzMsgRevokeToSub(msg []byte) (se structs.SubsetEvent, err error) {
 }
 
 // AuthzMsgRevokeResponseToSub transforms authz.MsgRevokeResponse sdk messages to SubsetEvent
-func AuthzMsgRevokeResponseToSub(msg []byte) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) AuthzMsgRevokeResponseToSub(msg []byte) (se structs.SubsetEvent, err error) {
 	m := &authz.MsgRevokeResponse{}
 	if err := proto.Unmarshal(msg, m); err != nil {
 		return se, fmt.Errorf("Not a revoke_response type: %w", err)

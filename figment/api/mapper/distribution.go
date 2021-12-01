@@ -12,7 +12,7 @@ import (
 )
 
 // DistributionWithdrawValidatorCommissionToSub transforms distribution.MsgWithdrawValidatorCommission sdk messages to SubsetEvent
-func DistributionWithdrawValidatorCommissionToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) DistributionWithdrawValidatorCommissionToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
 	wvc := &distribution.MsgWithdrawValidatorCommission{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return se, fmt.Errorf("Not a distribution type: %w", err)
@@ -32,7 +32,7 @@ func DistributionWithdrawValidatorCommissionToSub(msg []byte, lg types.ABCIMessa
 }
 
 // DistributionSetWithdrawAddressToSub transforms distribution.MsgSetWithdrawAddress sdk messages to SubsetEvent
-func DistributionSetWithdrawAddressToSub(msg []byte) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) DistributionSetWithdrawAddressToSub(msg []byte) (se structs.SubsetEvent, err error) {
 	swa := &distribution.MsgSetWithdrawAddress{}
 	if err := proto.Unmarshal(msg, swa); err != nil {
 		return se, fmt.Errorf("Not a set_withdraw_address type: %w", err)
@@ -49,7 +49,7 @@ func DistributionSetWithdrawAddressToSub(msg []byte) (se structs.SubsetEvent, er
 }
 
 // DistributionWithdrawDelegatorRewardToSub transforms distribution.MsgWithdrawDelegatorReward sdk messages to SubsetEvent
-func DistributionWithdrawDelegatorRewardToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) DistributionWithdrawDelegatorRewardToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
 	wdr := &distribution.MsgWithdrawDelegatorReward{}
 	if err := proto.Unmarshal(msg, wdr); err != nil {
 		return se, fmt.Errorf("Not a withdraw_validator_commission type: %w", err)
@@ -72,7 +72,7 @@ func DistributionWithdrawDelegatorRewardToSub(msg []byte, lg types.ABCIMessageLo
 }
 
 // DistributionFundCommunityPoolToSub transforms distribution.MsgFundCommunityPool sdk messages to SubsetEvent
-func DistributionFundCommunityPoolToSub(msg []byte) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) DistributionFundCommunityPoolToSub(msg []byte) (se structs.SubsetEvent, err error) {
 	fcp := &distribution.MsgFundCommunityPool{}
 	if err := proto.Unmarshal(msg, fcp); err != nil {
 		return se, fmt.Errorf("Not a fund_community_pool type: %w", err)
