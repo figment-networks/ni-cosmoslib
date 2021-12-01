@@ -12,7 +12,7 @@ import (
 )
 
 // GovDepositToSub transforms gov.MsgDeposit sdk messages to SubsetEvent
-func GovDepositToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) GovDepositToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
 	dep := &gov.MsgDeposit{}
 	if err := proto.Unmarshal(msg, dep); err != nil {
 		return se, fmt.Errorf("Not a deposit type: %w", err)
@@ -52,7 +52,7 @@ func GovDepositToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEven
 }
 
 // GovVoteToSub transforms gov.MsgVote sdk messages to SubsetEvent
-func GovVoteToSub(msg []byte) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) GovVoteToSub(msg []byte) (se structs.SubsetEvent, err error) {
 	vote := &gov.MsgVote{}
 	if err := proto.Unmarshal(msg, vote); err != nil {
 		return se, fmt.Errorf("Not a vote type: %w", err)
@@ -70,7 +70,7 @@ func GovVoteToSub(msg []byte) (se structs.SubsetEvent, err error) {
 }
 
 // GovSubmitProposalToSub transforms gov.MsgSubmitProposal sdk messages to SubsetEvent
-func GovSubmitProposalToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) GovSubmitProposalToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
 	sp := &gov.MsgSubmitProposal{}
 	if err := proto.Unmarshal(msg, sp); err != nil {
 		return se, fmt.Errorf("Not a submit_proposal type: %w", err)

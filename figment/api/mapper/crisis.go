@@ -10,7 +10,7 @@ import (
 )
 
 // CrisisVerifyInvariantToSub transforms crisis.MsgVerifyInvariant sdk messages to SubsetEvent
-func CrisisVerifyInvariantToSub(msg []byte) (se structs.SubsetEvent, er error) {
+func (mapper *Mapper) CrisisVerifyInvariantToSub(msg []byte) (se structs.SubsetEvent, er error) {
 	mvi := &crisis.MsgVerifyInvariant{}
 	if err := proto.Unmarshal(msg, mvi); err != nil {
 		return se, fmt.Errorf("Not a crisis type: %w", err)

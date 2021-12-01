@@ -10,7 +10,7 @@ import (
 )
 
 // SlashingUnjailToSub transforms slashing.MsgUnjail sdk messages to SubsetEvent
-func SlashingUnjailToSub(msg []byte) (se structs.SubsetEvent, er error) {
+func (mapper *Mapper) SlashingUnjailToSub(msg []byte) (se structs.SubsetEvent, er error) {
 	unjail := &slashing.MsgUnjail{}
 	if err := proto.Unmarshal(msg, unjail); err != nil {
 		return se, fmt.Errorf("Not a unjail type: %w", err)

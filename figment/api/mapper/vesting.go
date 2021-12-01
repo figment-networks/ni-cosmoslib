@@ -12,7 +12,7 @@ import (
 )
 
 // VestingMsgCreateVestingAccountToSub transforms vesting.MsgCreateVestingAccount sdk messages to SubsetEvent
-func VestingMsgCreateVestingAccountToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) VestingMsgCreateVestingAccountToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
 
 	cva := &vesting.MsgCreateVestingAccount{}
 	if err := proto.Unmarshal(msg, cva); err != nil {

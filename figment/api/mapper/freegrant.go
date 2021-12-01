@@ -10,7 +10,7 @@ import (
 )
 
 // FeegrantGrantAllowance transforms feegrant.MsgGrantAllowance sdk messages to SubsetEvent
-func FeegrantGrantAllowance(msg []byte) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) FeegrantGrantAllowance(msg []byte) (se structs.SubsetEvent, err error) {
 	m := &feegrant.MsgGrantAllowance{}
 	if err := proto.Unmarshal(msg, m); err != nil {
 		return se, fmt.Errorf("Not a grant_allowance type: %w", err)
@@ -28,7 +28,7 @@ func FeegrantGrantAllowance(msg []byte) (se structs.SubsetEvent, err error) {
 }
 
 // FeegrantGrantAllowanceResponse transforms feegrant.MsgGrantAllowanceResponse sdk messages to SubsetEvent
-func FeegrantGrantAllowanceResponse(msg []byte) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) FeegrantGrantAllowanceResponse(msg []byte) (se structs.SubsetEvent, err error) {
 	m := &feegrant.MsgGrantAllowanceResponse{}
 	if err := proto.Unmarshal(msg, m); err != nil {
 		return se, fmt.Errorf("Not a grant_allowance_response type: %w", err)
@@ -41,7 +41,7 @@ func FeegrantGrantAllowanceResponse(msg []byte) (se structs.SubsetEvent, err err
 }
 
 // FeegrantRevokeAllowance transforms feegrant.MsgRevokeAllowance sdk messages to SubsetEvent
-func FeegrantRevokeAllowance(msg []byte) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) FeegrantRevokeAllowance(msg []byte) (se structs.SubsetEvent, err error) {
 	m := &feegrant.MsgRevokeAllowance{}
 	if err := proto.Unmarshal(msg, m); err != nil {
 		return se, fmt.Errorf("Not a revoke_allowance type: %w", err)
@@ -58,7 +58,7 @@ func FeegrantRevokeAllowance(msg []byte) (se structs.SubsetEvent, err error) {
 }
 
 // FeegrantRevokeAllowanceResponse transforms feegrant.MsgRevokeAllowanceResponse sdk messages to SubsetEvent
-func FeegrantRevokeAllowanceResponse(msg []byte) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) FeegrantRevokeAllowanceResponse(msg []byte) (se structs.SubsetEvent, err error) {
 	m := &feegrant.MsgRevokeAllowanceResponse{}
 	if err := proto.Unmarshal(msg, m); err != nil {
 		return se, fmt.Errorf("Not a revoke_allowance_response type: %w", err)

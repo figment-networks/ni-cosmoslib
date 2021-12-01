@@ -11,7 +11,7 @@ import (
 )
 
 // StakingUndelegateToSub transforms staking.MsgUndelegate sdk messages to SubsetEvent
-func StakingUndelegateToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) StakingUndelegateToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
 	u := &staking.MsgUndelegate{}
 	if err := proto.Unmarshal(msg, u); err != nil {
 		return se, fmt.Errorf("Not a undelegate type: %w", err)
@@ -32,12 +32,12 @@ func StakingUndelegateToSub(msg []byte, lg types.ABCIMessageLog) (se structs.Sub
 		},
 	}
 
-	err = produceTransfers(&se, "reward", "unbondedAddr", lg) // todo
+	err = produceTransfers(&se, "reward", mapper.UnboundedAddress, lg)
 	return se, err
 }
 
 // StakingDelegateToSub transforms staking.MsgDelegate sdk messages to SubsetEvent
-func StakingDelegateToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) StakingDelegateToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
 	d := &staking.MsgDelegate{}
 	if err := proto.Unmarshal(msg, d); err != nil {
 		return se, fmt.Errorf("Not a delegate type: %w", err)
@@ -64,7 +64,7 @@ func StakingDelegateToSub(msg []byte, lg types.ABCIMessageLog) (se structs.Subse
 }
 
 // StakingBeginRedelegateToSub transforms staking.MsgBeginRedelegate sdk messages to SubsetEvent
-func StakingBeginRedelegateToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) StakingBeginRedelegateToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
 	br := &staking.MsgBeginRedelegate{}
 	if err := proto.Unmarshal(msg, br); err != nil {
 		return se, fmt.Errorf("Not a begin_redelegate type: %w", err)
@@ -92,7 +92,7 @@ func StakingBeginRedelegateToSub(msg []byte, lg types.ABCIMessageLog) (se struct
 }
 
 // StakingCreateValidatorToSub transforms staking.MsgCreateValidator sdk messages to SubsetEvent
-func StakingCreateValidatorToSub(msg []byte) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) StakingCreateValidatorToSub(msg []byte) (se structs.SubsetEvent, err error) {
 	ev := &staking.MsgCreateValidator{}
 	if err := proto.Unmarshal(msg, ev); err != nil {
 		return se, fmt.Errorf("Not a create_validator type: %w", err)
@@ -140,7 +140,7 @@ func StakingCreateValidatorToSub(msg []byte) (se structs.SubsetEvent, err error)
 }
 
 // StakingEditValidatorToSub transforms staking.MsgEditValidator sdk messages to SubsetEvent
-func StakingEditValidatorToSub(msg []byte) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) StakingEditValidatorToSub(msg []byte) (se structs.SubsetEvent, err error) {
 	ev := &staking.MsgEditValidator{}
 	if err := proto.Unmarshal(msg, ev); err != nil {
 		return se, fmt.Errorf("Not a edit_validator type: %w", err)

@@ -11,7 +11,7 @@ import (
 )
 
 // BankMultisendToSub transforms bank.MsgMultiSend sdk messages to SubsetEvent
-func BankMultisendToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) BankMultisendToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
 	multisend := &bank.MsgMultiSend{}
 	if err := proto.Unmarshal(msg, multisend); err != nil {
 		return se, fmt.Errorf("Not a multisend type: %w", err)
@@ -42,7 +42,7 @@ func BankMultisendToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetE
 }
 
 // BankSendToSub transforms bank.MsgSend sdk messages to SubsetEvent
-func BankSendToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
+func (mapper *Mapper) BankSendToSub(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
 	send := &bank.MsgSend{}
 	if err := proto.Unmarshal(msg, send); err != nil {
 		return se, fmt.Errorf("Not a send type: %w", err)
