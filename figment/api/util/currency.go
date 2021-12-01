@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var curencyRegex = regexp.MustCompile("([0-9\\.\\,\\-]+)[\\s]*([^0-9\\s]+)$")
+var curencyRegex = regexp.MustCompile("^([0-9\\.\\,\\-]+)[\\s]*([0-9A-Za-z/\\s]+)")
 
 func GetCoin(s string) (number *big.Int, exp int32, err error) {
 	s = strings.Replace(s, ",", ".", -1)
