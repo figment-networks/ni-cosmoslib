@@ -32,7 +32,7 @@ func (mapper *Mapper) StakingUndelegateToSub(msg []byte, lg types.ABCIMessageLog
 		},
 	}
 
-	err = produceTransfers(&se, "reward", mapper.UnboundedAddress, lg)
+	err = produceTransfers(&se, "reward", mapper.UnbondedAddress, lg)
 	return se, err
 }
 
