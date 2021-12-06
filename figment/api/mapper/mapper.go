@@ -1,5 +1,5 @@
 package mapper
 
 type Mapper struct {
-	UnboundedAddress string
+	UnbondedAddress string
 }
