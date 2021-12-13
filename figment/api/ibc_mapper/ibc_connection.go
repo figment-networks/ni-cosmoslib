@@ -4,20 +4,20 @@ import (
 	"fmt"
 	"strconv"
 
-	connection "github.com/cosmos/ibc-go/modules/core/03-connection/types"
 	"github.com/figment-networks/indexing-engine/structs"
-	shared "github.com/figment-networks/indexing-engine/structs"
+
+	connection "github.com/cosmos/ibc-go/modules/core/03-connection/types"
 	"github.com/gogo/protobuf/proto"
 )
 
 // IBCConnectionOpenInitToSub transforms ibc.MsgConnectionOpenInit sdk messages to SubsetEvent
-func IBCConnectionOpenInitToSub(msg []byte) (se shared.SubsetEvent, err error) {
+func IBCConnectionOpenInitToSub(msg []byte) (se structs.SubsetEvent, err error) {
 	m := &connection.MsgConnectionOpenInit{}
 	if err := proto.Unmarshal(msg, m); err != nil {
 		return se, fmt.Errorf("Not a connection_open_init type: %w", err)
 	}
 
-	return shared.SubsetEvent{
+	return structs.SubsetEvent{
 		Type:   []string{"connection_open_init"},
 		Module: "ibc",
 		Node: map[string][]structs.Account{
@@ -25,8 +25,8 @@ func IBCConnectionOpenInitToSub(msg []byte) (se shared.SubsetEvent, err error) {
 		},
 		Additional: map[string][]string{
 			"client_id":                  {m.ClientId},
-			"version_identifier":         {m.Version.Identifier},
-			"version_features":           m.Version.Features,
+			"version_identifier":         {versionIdentifier(m.Version)},
+			"version_features":           versionFeatures(m.Version),
 			"delay_period":               {strconv.FormatUint(m.DelayPeriod, 10)},
 			"counterparty_client_id":     {m.Counterparty.ClientId},
 			"counterparty_connection_id": {m.Counterparty.ConnectionId},
@@ -36,7 +36,7 @@ func IBCConnectionOpenInitToSub(msg []byte) (se shared.SubsetEvent, err error) {
 }
 
 // IBCConnectionOpenConfirmToSub transforms ibc.MsgConnectionOpenConfirm sdk messages to SubsetEvent
-func IBCConnectionOpenConfirmToSub(msg []byte) (se shared.SubsetEvent, err error) {
+func IBCConnectionOpenConfirmToSub(msg []byte) (se structs.SubsetEvent, err error) {
 	m := &connection.MsgConnectionOpenConfirm{}
 	if err := proto.Unmarshal(msg, m); err != nil {
 		return se, fmt.Errorf("Not a connection_open_confirm type: %w", err)
@@ -48,7 +48,7 @@ func IBCConnectionOpenConfirmToSub(msg []byte) (se shared.SubsetEvent, err error
 		return se, err
 	}
 
-	return shared.SubsetEvent{
+	return structs.SubsetEvent{
 		Type:   []string{"connection_open_confirm"},
 		Module: "ibc",
 		Node: map[string][]structs.Account{
@@ -64,7 +64,7 @@ func IBCConnectionOpenConfirmToSub(msg []byte) (se shared.SubsetEvent, err error
 }
 
 // IBCConnectionOpenAckToSub transforms ibc.MsgConnectionOpenAck sdk messages to SubsetEvent
-func IBCConnectionOpenAckToSub(msg []byte) (se shared.SubsetEvent, err error) {
+func IBCConnectionOpenAckToSub(msg []byte) (se structs.SubsetEvent, err error) {
 	m := &connection.MsgConnectionOpenAck{}
 	if err := proto.Unmarshal(msg, m); err != nil {
 		return se, fmt.Errorf("Not a connection_open_ack type: %w", err)
@@ -84,7 +84,7 @@ func IBCConnectionOpenAckToSub(msg []byte) (se shared.SubsetEvent, err error) {
 		return se, err
 	}
 
-	return shared.SubsetEvent{
+	return structs.SubsetEvent{
 		Type:   []string{"connection_open_ack"},
 		Module: "ibc",
 		Node: map[string][]structs.Account{
@@ -93,8 +93,8 @@ func IBCConnectionOpenAckToSub(msg []byte) (se shared.SubsetEvent, err error) {
 		Additional: map[string][]string{
 			"connection_id":                    {m.ConnectionId},
 			"counterparty_connection_id":       {m.CounterpartyConnectionId},
-			"version_identifier":               {m.Version.Identifier},
-			"version_features":                 m.Version.Features,
+			"version_identifier":               {versionIdentifier(m.Version)},
+			"version_features":                 versionFeatures(m.Version),
 			"client_state":                     {m.ClientState.String()},
 			"proof_height_revision_number":     {strconv.FormatUint(m.ProofHeight.RevisionNumber, 10)},
 			"proof_height_revision_height":     {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
@@ -108,7 +108,7 @@ func IBCConnectionOpenAckToSub(msg []byte) (se shared.SubsetEvent, err error) {
 }
 
 // IBCConnectionOpenTryToSub transforms ibc.MsgConnectionOpenTry sdk messages to SubsetEvent
-func IBCConnectionOpenTryToSub(msg []byte) (se shared.SubsetEvent, err error) {
+func IBCConnectionOpenTryToSub(msg []byte) (se structs.SubsetEvent, err error) {
 	m := &connection.MsgConnectionOpenTry{}
 	if err := proto.Unmarshal(msg, m); err != nil {
 		return se, fmt.Errorf("Not a connection_open_try type: %w", err)
@@ -128,7 +128,7 @@ func IBCConnectionOpenTryToSub(msg []byte) (se shared.SubsetEvent, err error) {
 		return se, err
 	}
 
-	se = shared.SubsetEvent{
+	se = structs.SubsetEvent{
 		Type:   []string{"connection_open_try"},
 		Module: "ibc",
 		Node: map[string][]structs.Account{
@@ -159,4 +159,22 @@ func IBCConnectionOpenTryToSub(msg []byte) (se shared.SubsetEvent, err error) {
 	}
 
 	return se, nil
+}
+
+func versionIdentifier(version *connection.Version) string {
+
+	if version == nil {
+		return ""
+	}
+
+	return version.Identifier
+}
+
+func versionFeatures(version *connection.Version) []string {
+
+	if version == nil {
+		return nil
+	}
+
+	return version.Features
 }
