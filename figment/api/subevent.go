@@ -233,13 +233,14 @@ func AddIBCSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.
 
 func AddTendermintSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.ABCIMessageLog) (err error) {
 	var ev structs.SubsetEvent
+	// TypeUrl must be in the format "/tendermint.liquidity.v1beta1.MsgSwapWithinBatch"
 	tPath := strings.Split(m.TypeUrl, ".")
-	if len(tPath) != 5 {
-		return fmt.Errorf("problem with ibc event ibc event %s: %w", m.TypeUrl, ErrUnknownMessageType)
+	if len(tPath) != 4 {
+		return fmt.Errorf("problem with tendermint event %s (wrong number of members): %w", m.TypeUrl, ErrUnknownMessageType)
 	}
 
-	msgType := tPath[4]
-	msgRoute := tPath[2]
+	msgType := tPath[3]
+	msgRoute := tPath[1]
 
 	switch msgRoute {
 	case "liquidity":
