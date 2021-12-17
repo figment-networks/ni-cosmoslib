@@ -6,6 +6,7 @@ import (
 
 	"github.com/figment-networks/indexing-engine/structs"
 	shared "github.com/figment-networks/indexing-engine/structs"
+	"github.com/figment-networks/ni-cosmoslib/figment/api/util"
 
 	channel "github.com/cosmos/ibc-go/modules/core/04-channel/types"
 	"github.com/gogo/protobuf/proto"
@@ -44,7 +45,7 @@ func IBCChannelOpenConfirmToSub(msg []byte) (se shared.SubsetEvent, err error) {
 	}
 
 	// Encode fields that can contain null bytes.
-	proofAck, err := encodeToB64(m.ProofAck, "proof_ack")
+	proofAck, err := util.EncodeToB64(m.ProofAck, "proof_ack")
 	if err != nil {
 		return se, err
 	}
@@ -73,7 +74,7 @@ func IBCChannelOpenAckToSub(msg []byte) (se shared.SubsetEvent, err error) {
 	}
 
 	// Encode fields that can contain null bytes.
-	proofTry, err := encodeToB64(m.ProofTry, "proof_try")
+	proofTry, err := util.EncodeToB64(m.ProofTry, "proof_try")
 	if err != nil {
 		return se, err
 	}
@@ -104,7 +105,7 @@ func IBCChannelOpenTryToSub(msg []byte) (se shared.SubsetEvent, err error) {
 	}
 
 	// Encode fields that can contain null bytes.
-	proofInit, err := encodeToB64(m.ProofInit, "proof_init")
+	proofInit, err := util.EncodeToB64(m.ProofInit, "proof_init")
 	if err != nil {
 		return se, err
 	}
@@ -160,7 +161,7 @@ func IBCChannelCloseConfirmToSub(msg []byte) (se shared.SubsetEvent, err error) 
 	}
 
 	// Encode fields that can contain null bytes.
-	proofInit, err := encodeToB64(m.ProofInit, "proof_init")
+	proofInit, err := util.EncodeToB64(m.ProofInit, "proof_init")
 	if err != nil {
 		return se, err
 	}
@@ -189,7 +190,7 @@ func IBCChannelRecvPacketToSub(msg []byte) (se shared.SubsetEvent, err error) {
 	}
 
 	// Encode fields that can contain null bytes.
-	proofCommitment, err := encodeToB64(m.ProofCommitment, "proof_commitment")
+	proofCommitment, err := util.EncodeToB64(m.ProofCommitment, "proof_commitment")
 	if err != nil {
 		return se, err
 	}
@@ -225,7 +226,7 @@ func IBCChannelTimeoutToSub(msg []byte) (se shared.SubsetEvent, err error) {
 	}
 
 	// Encode fields that can contain null bytes.
-	proofUnreceived, err := encodeToB64(m.ProofUnreceived, "proof_unreceived")
+	proofUnreceived, err := util.EncodeToB64(m.ProofUnreceived, "proof_unreceived")
 	if err != nil {
 		return se, err
 	}
@@ -262,7 +263,7 @@ func IBCChannelAcknowledgementToSub(msg []byte) (se shared.SubsetEvent, err erro
 	}
 
 	// Encode fields that can contain null bytes.
-	proofAcked, err := encodeToB64(m.ProofAcked, "proof_acked")
+	proofAcked, err := util.EncodeToB64(m.ProofAcked, "proof_acked")
 	if err != nil {
 		return se, err
 	}

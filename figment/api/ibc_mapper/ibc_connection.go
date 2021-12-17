@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/figment-networks/indexing-engine/structs"
+	"github.com/figment-networks/ni-cosmoslib/figment/api/util"
 
 	connection "github.com/cosmos/ibc-go/modules/core/03-connection/types"
 	"github.com/gogo/protobuf/proto"
@@ -43,7 +44,7 @@ func IBCConnectionOpenConfirmToSub(msg []byte) (se structs.SubsetEvent, err erro
 	}
 
 	// Encode fields that can contain null bytes.
-	proofAck, err := encodeToB64(m.ProofAck, "proof_ack")
+	proofAck, err := util.EncodeToB64(m.ProofAck, "proof_ack")
 	if err != nil {
 		return se, err
 	}
@@ -71,15 +72,15 @@ func IBCConnectionOpenAckToSub(msg []byte) (se structs.SubsetEvent, err error) {
 	}
 
 	// Encode fields that can contain null bytes.
-	proofTry, err := encodeToB64(m.ProofTry, "proof_try")
+	proofTry, err := util.EncodeToB64(m.ProofTry, "proof_try")
 	if err != nil {
 		return se, err
 	}
-	proofClient, err := encodeToB64(m.ProofClient, "proof_client")
+	proofClient, err := util.EncodeToB64(m.ProofClient, "proof_client")
 	if err != nil {
 		return se, err
 	}
-	proofConsensus, err := encodeToB64(m.ProofConsensus, "proof_consensus")
+	proofConsensus, err := util.EncodeToB64(m.ProofConsensus, "proof_consensus")
 	if err != nil {
 		return se, err
 	}
@@ -115,15 +116,15 @@ func IBCConnectionOpenTryToSub(msg []byte) (se structs.SubsetEvent, err error) {
 	}
 
 	// Encode fields that can contain null bytes.
-	proofInit, err := encodeToB64(m.ProofInit, "proof_init")
+	proofInit, err := util.EncodeToB64(m.ProofInit, "proof_init")
 	if err != nil {
 		return se, err
 	}
-	proofClient, err := encodeToB64(m.ProofClient, "proof_client")
+	proofClient, err := util.EncodeToB64(m.ProofClient, "proof_client")
 	if err != nil {
 		return se, err
 	}
-	proofConsensus, err := encodeToB64(m.ProofConsensus, "proof_consensus")
+	proofConsensus, err := util.EncodeToB64(m.ProofConsensus, "proof_consensus")
 	if err != nil {
 		return se, err
 	}

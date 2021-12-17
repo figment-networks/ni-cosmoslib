@@ -5,6 +5,7 @@ import (
 
 	"github.com/figment-networks/indexing-engine/structs"
 	shared "github.com/figment-networks/indexing-engine/structs"
+	"github.com/figment-networks/ni-cosmoslib/figment/api/util"
 
 	client "github.com/cosmos/ibc-go/modules/core/02-client/types"
 	"github.com/gogo/protobuf/proto"
@@ -58,11 +59,11 @@ func IBCUpgradeClientToSub(msg []byte) (se shared.SubsetEvent, err error) {
 	}
 
 	// Encode fields that can contain null bytes.
-	proofUpgradeClient, err := encodeToB64(m.ProofUpgradeClient, "proof_upgrade_client")
+	proofUpgradeClient, err := util.EncodeToB64(m.ProofUpgradeClient, "proof_upgrade_client")
 	if err != nil {
 		return se, err
 	}
-	proofUpgradeConsensusState, err := encodeToB64(m.ProofUpgradeConsensusState, "proof_upgrade_consensus_state")
+	proofUpgradeConsensusState, err := util.EncodeToB64(m.ProofUpgradeConsensusState, "proof_upgrade_consensus_state")
 	if err != nil {
 		return se, err
 	}

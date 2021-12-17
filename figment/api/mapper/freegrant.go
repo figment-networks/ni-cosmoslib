@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/figment-networks/indexing-engine/structs"
+	"github.com/figment-networks/ni-cosmoslib/figment/api/util"
 
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
 	"github.com/gogo/protobuf/proto"
@@ -16,13 +17,18 @@ func (mapper *Mapper) FeegrantGrantAllowance(msg []byte) (se structs.SubsetEvent
 		return se, fmt.Errorf("Not a grant_allowance type: %w", err)
 	}
 
+	allowance, err := util.EncodeToB64(m.Allowance.Value, "allowance")
+	if err != nil {
+		return se, err
+	}
+
 	return structs.SubsetEvent{
 		Type:   []string{"grant_allowance"},
 		Module: "feegrant",
 		Additional: map[string][]string{
 			"granter":   {m.Granter},
 			"grantee":   {m.Grantee},
-			"allowance": {string(m.Allowance.Value)},
+			"allowance": {allowance},
 		},
 	}, nil
 }
