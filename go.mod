@@ -3,8 +3,8 @@ module github.com/figment-networks/ni-cosmoslib
 go 1.16
 
 require (
-	github.com/cosmos/cosmos-sdk v0.44.3
-	github.com/cosmos/ibc-go v1.0.1
+	github.com/cosmos/cosmos-sdk v0.44.5
+	github.com/cosmos/ibc-go/v2 v2.0.3
 	github.com/figment-networks/indexing-engine v0.5.0
 	github.com/gogo/protobuf v1.3.3
 	github.com/gravity-devs/liquidity v1.4.2

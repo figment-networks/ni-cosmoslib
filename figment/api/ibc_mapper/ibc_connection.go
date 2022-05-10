@@ -7,7 +7,7 @@ import (
 	"github.com/figment-networks/indexing-engine/structs"
 	"github.com/figment-networks/ni-cosmoslib/figment/api/util"
 
-	connection "github.com/cosmos/ibc-go/modules/core/03-connection/types"
+	connection "github.com/cosmos/ibc-go/v2/modules/core/03-connection/types"
 	"github.com/gogo/protobuf/proto"
 )
 

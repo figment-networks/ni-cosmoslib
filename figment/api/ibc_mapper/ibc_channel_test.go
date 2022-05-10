@@ -3,7 +3,7 @@ package mapper_test
 import (
 	"testing"
 
-	channel "github.com/cosmos/ibc-go/modules/core/04-channel/types"
+	channel "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
 	mapper "github.com/figment-networks/ni-cosmoslib/figment/api/ibc_mapper"
 )
 
