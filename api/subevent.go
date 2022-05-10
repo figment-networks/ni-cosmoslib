@@ -8,9 +8,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/figment-networks/indexing-engine/structs"
-	ibc_mapper "github.com/figment-networks/ni-cosmoslib/figment/api/ibc_mapper"
-	"github.com/figment-networks/ni-cosmoslib/figment/api/mapper"
-	"github.com/figment-networks/ni-cosmoslib/figment/api/tendermint_mapper"
+	"github.com/figment-networks/ni-cosmoslib/figment/mapper"
+	"github.com/figment-networks/ni-cosmoslib/figment/tendermint_mapper"
+	ibc_mapper "github.com/figment-networks/ni-cosmoslib/ibcmapper/v1"
 )
 
 var defaultMapper = &mapper.Mapper{}

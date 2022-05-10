@@ -1,10 +1,10 @@
-package mapper_test
+package ibcmapper
 
 import (
 	"testing"
 
-	channel "github.com/cosmos/ibc-go/modules/core/04-channel/types"
-	mapper "github.com/figment-networks/ni-cosmoslib/figment/api/ibc_mapper"
+	channel "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
+	mapper "github.com/figment-networks/ni-cosmoslib/api/ibc_mapper/v2"
 )
 
 func TestIBCChannelRecvPacketToSub(t *testing.T) {

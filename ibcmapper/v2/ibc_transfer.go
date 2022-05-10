@@ -1,4 +1,4 @@
-package mapper
+package ibcmapper
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"github.com/figment-networks/indexing-engine/structs"
 	shared "github.com/figment-networks/indexing-engine/structs"
 
-	transfer "github.com/cosmos/ibc-go/modules/apps/transfer/types"
+	transfer "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	"github.com/gogo/protobuf/proto"
 )
 
