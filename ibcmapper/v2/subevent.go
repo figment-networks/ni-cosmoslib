@@ -6,6 +6,10 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/figment-networks/indexing-engine/structs"
+
+	codec_types "github.com/cosmos/cosmos-sdk/codec/types"
+
+	api "github.com/figment-networks/ni-cosmoslib/api"
 )
 
 // AddIBCSubEvent converts an ibc event from the log to a Subevent type and adds it to the provided TransactionEvent struct
@@ -14,7 +18,7 @@ func AddIBCSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.
 	// TypeUrl must be in the format "/ibc.core.client.v1.MsgCreateClient"
 	tPath := strings.Split(m.TypeUrl, ".")
 	if len(tPath) != 5 {
-		return fmt.Errorf("problem with ibc event ibc event %s: %w", m.TypeUrl, ErrUnknownMessageType)
+		return fmt.Errorf("problem with ibc event ibc event %s: %w", m.TypeUrl, api.ErrUnknownMessageType)
 	}
 
 	msgType := tPath[4]
@@ -24,62 +28,62 @@ func AddIBCSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.
 	case "client":
 		switch msgType {
 		case "MsgCreateClient":
-			ev, err = ibc_mapper.IBCCreateClientToSub(m.Value)
+			ev, err = IBCCreateClientToSub(m.Value)
 		case "MsgUpdateClient":
-			ev, err = ibc_mapper.IBCUpdateClientToSub(m.Value)
+			ev, err = IBCUpdateClientToSub(m.Value)
 		case "MsgUpgradeClient":
-			ev, err = ibc_mapper.IBCUpgradeClientToSub(m.Value)
+			ev, err = IBCUpgradeClientToSub(m.Value)
 		case "MsgSubmitMisbehaviour":
-			ev, err = ibc_mapper.IBCSubmitMisbehaviourToSub(m.Value)
+			ev, err = IBCSubmitMisbehaviourToSub(m.Value)
 		default:
-			err = fmt.Errorf("problem with ibc event %s - %s: %w", msgRoute, msgType, ErrUnknownMessageType)
+			err = fmt.Errorf("problem with ibc event %s - %s: %w", msgRoute, msgType, api.ErrUnknownMessageType)
 		}
 	case "connection":
 		switch msgType {
 		case "MsgConnectionOpenInit":
-			ev, err = ibc_mapper.IBCConnectionOpenInitToSub(m.Value)
+			ev, err = IBCConnectionOpenInitToSub(m.Value)
 		case "MsgConnectionOpenConfirm":
-			ev, err = ibc_mapper.IBCConnectionOpenConfirmToSub(m.Value)
+			ev, err = IBCConnectionOpenConfirmToSub(m.Value)
 		case "MsgConnectionOpenAck":
-			ev, err = ibc_mapper.IBCConnectionOpenAckToSub(m.Value)
+			ev, err = IBCConnectionOpenAckToSub(m.Value)
 		case "MsgConnectionOpenTry":
-			ev, err = ibc_mapper.IBCConnectionOpenTryToSub(m.Value)
+			ev, err = IBCConnectionOpenTryToSub(m.Value)
 		default:
-			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, ErrUnknownMessageType)
+			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, api.ErrUnknownMessageType)
 		}
 	case "channel":
 		switch msgType {
 		case "MsgChannelOpenInit":
-			ev, err = ibc_mapper.IBCChannelOpenInitToSub(m.Value)
+			ev, err = IBCChannelOpenInitToSub(m.Value)
 		case "MsgChannelOpenTry":
-			ev, err = ibc_mapper.IBCChannelOpenTryToSub(m.Value)
+			ev, err = IBCChannelOpenTryToSub(m.Value)
 		case "MsgChannelOpenConfirm":
-			ev, err = ibc_mapper.IBCChannelOpenConfirmToSub(m.Value)
+			ev, err = IBCChannelOpenConfirmToSub(m.Value)
 		case "MsgChannelOpenAck":
-			ev, err = ibc_mapper.IBCChannelOpenAckToSub(m.Value)
+			ev, err = IBCChannelOpenAckToSub(m.Value)
 		case "MsgChannelCloseInit":
-			ev, err = ibc_mapper.IBCChannelCloseInitToSub(m.Value)
+			ev, err = IBCChannelCloseInitToSub(m.Value)
 		case "MsgChannelCloseConfirm":
-			ev, err = ibc_mapper.IBCChannelCloseConfirmToSub(m.Value)
+			ev, err = IBCChannelCloseConfirmToSub(m.Value)
 		case "MsgRecvPacket":
-			ev, err = ibc_mapper.IBCChannelRecvPacketToSub(m.Value)
+			ev, err = IBCChannelRecvPacketToSub(m.Value)
 		case "MsgTimeout":
-			ev, err = ibc_mapper.IBCChannelTimeoutToSub(m.Value)
+			ev, err = IBCChannelTimeoutToSub(m.Value)
 		case "MsgAcknowledgement":
-			ev, err = ibc_mapper.IBCChannelAcknowledgementToSub(m.Value)
+			ev, err = IBCChannelAcknowledgementToSub(m.Value)
 
 		default:
-			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, ErrUnknownMessageType)
+			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, api.ErrUnknownMessageType)
 		}
 	case "transfer":
 		switch msgType {
 		case "MsgTransfer":
-			ev, err = ibc_mapper.IBCTransferToSub(m.Value)
+			ev, err = IBCTransferToSub(m.Value)
 		default:
-			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, ErrUnknownMessageType)
+			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, api.ErrUnknownMessageType)
 		}
 	default:
-		err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, ErrUnknownMessageType)
+		err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, api.ErrUnknownMessageType)
 	}
 
 	if len(ev.Type) > 0 {
