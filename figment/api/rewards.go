@@ -15,7 +15,7 @@ import (
 func AddRewardEvent(rev *structs.RewardEvent, m *codec_types.Any, lg types.ABCIMessageLog, ma *mapper.Mapper) (err error) {
 
 	// TypeUrl must be in the format "/cosmos.bank.v1beta1.MsgSend"
-
+	log.Println("----------------------------------------------------------------")
 	tPath := strings.Split(m.TypeUrl, ".")
 	if len(tPath) != 4 {
 		return fmt.Errorf("problem with cosmos event cosmos event %s: %w", m.TypeUrl, ErrUnknownMessageType)
@@ -30,7 +30,7 @@ func AddRewardEvent(rev *structs.RewardEvent, m *codec_types.Any, lg types.ABCIM
 	rev.Type = msgType
 	var is bool
 
-	log.Println("route: ", msgRoute, msgType)
+	//	log.Println("route: ", msgRoute, msgType)
 	switch msgRoute {
 	case "distribution":
 		switch msgType {
@@ -39,6 +39,8 @@ func AddRewardEvent(rev *structs.RewardEvent, m *codec_types.Any, lg types.ABCIM
 		case "MsgWithdrawDelegatorReward":
 			err = ma.MsgWithdrawDelegatorReward(m.Value, lg, rev)
 		}
+	case "MsgSetWithdrawAddress":
+		log.Println("MsgSetWithdrawAddress")
 
 	case "staking":
 		switch msgType {

@@ -6,12 +6,13 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/figment-networks/indexing-engine/structs"
-	"github.com/figment-networks/ni-cosmoslib/figment/api/util"
-
 	"github.com/cosmos/cosmos-sdk/types"
 	distribution "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/figment-networks/indexing-engine/proto/rewstruct"
+	"github.com/figment-networks/indexing-engine/structs"
+	"github.com/figment-networks/indexing-engine/worker/logger"
+	"github.com/figment-networks/ni-cosmoslib/figment/api/util"
 	"github.com/gogo/protobuf/proto"
 )
 
@@ -19,65 +20,169 @@ import (
 // delegate undelegate redelegate + withdraw delegator rewards -> delagator rewards
 // withdraw validator commision -> validator rewards
 
-// unbound address cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r
+func grouper(rev *structs.RewardEvent, lg types.ABCIMessageLog, amount_by string) (err error) {
+	if len(lg.GetEvents()) > 5 {
+		panic("just checking")
+	}
+	for _, ev := range lg.GetEvents() {
 
-// DistributionWithdrawValidatorCommissionToSub transforms distribution.MsgWithdrawValidatorCommission sdk messages to SubsetEvent
+		switch ev.GetType() {
+		case "coin_received":
+
+			parsed, err := groupEvents(ev)
+			if err != nil {
+				return err
+			}
+			if amount_by == "coin_received" {
+				for _, p := range parsed {
+					rev.RecipientAddress = append(rev.RecipientAddress, p["receiver"])
+
+					// switch p["receiver"] {
+					// case rev.DelegatorAddress:
+					// 	am, rew, err := fAmounts2("reward", strings.Split(p["amount"], ","))
+					// 	if err != nil {
+					// 		return rev, err
+					// 	}
+					// 	rev.Amounts = append(rev.Amounts, am...)
+					// 	rev.Rewards = append(rev.Rewards, rew...)
+					// default:
+					// 	am, rew, err := fAmounts2("amount", strings.Split(p["amount"], ","))
+					// 	if err != nil {
+					// 		return rev, err
+					// 	}
+					// 	rev.Amounts = append(rev.Amounts, am...)
+					// 	rev.Rewards = append(rev.Rewards, rew...)
+					// }
+
+					if p["receiver"] == rev.DelegatorAddress {
+						fAmounts("reward", strings.Split(p["amount"], ","), rev)
+					} else {
+						fAmounts("amount", strings.Split(p["amount"], ","), rev)
+					}
+				}
+			} else if amount_by == "redelegate" {
+				for _, p := range parsed {
+					rev.RecipientAddress = append(rev.RecipientAddress, p["receiver"])
+					if p["receiver"] == rev.DelegatorAddress {
+						fAmounts("reward", strings.Split(p["amount"], ","), rev)
+					}
+				}
+			}
+
+		case "coin_spent":
+			parsed, err := groupEvents(ev)
+			if err != nil {
+				return err
+			}
+			for _, p := range parsed {
+				rev.SenderAddress = append(rev.SenderAddress, p["spender"])
+			}
+		case "withdraw_commission":
+			// MsgWithdrawValidatorCommission
+			parsed, err := groupEvents(ev)
+			if err != nil {
+				return err
+			}
+			if len(parsed) > 1 {
+				logger.Error(fmt.Errorf("multiple withdraw_commission events")) // is that possible?
+				panic("withdraw_commission")
+
+			}
+			if amount_by == "withdraw_commission" {
+				for _, p := range parsed {
+					fAmounts("amount", strings.Split(p["amount"], ","), rev)
+				}
+			}
+		case "withdraw_rewards":
+			// MsgWithdrawDelegatorReward
+			parsed, err := groupEvents(ev)
+			if err != nil {
+				return err
+			}
+			if len(parsed) > 1 {
+				logger.Error(fmt.Errorf("multiple withdraw_rewards events")) // is that possible?
+				panic("withdraw_rewards")
+
+			}
+			// for _, p := range parsed {
+			// 	fAmounts("reward", strings.Split(p["amount"], ","), rev)
+			// }
+		case "delegate":
+			// MsgDelegate
+			parsed, err := groupEvents(ev)
+			if err != nil {
+				return err
+			}
+			if len(parsed) > 1 {
+				logger.Error(fmt.Errorf("multiple delegate events")) // is that possible?
+				panic("delegate")
+
+			}
+			// counted already in coin_received
+			// for _, p := range parsed {
+			// 	fAmounts("amount", strings.Split(p["amount"], ","), rev)
+			// }
+		case "redelegate":
+			// MsgBeginRedelegate
+			parsed, err := groupEvents(ev)
+			if err != nil {
+				return err
+			}
+			if len(parsed) > 1 {
+				logger.Error(fmt.Errorf("multiple redelegate events")) // is that possible?
+				panic("redelegate")
+			}
+			if amount_by == "redelegate" { // TODO do not need it here ;)
+				for _, p := range parsed {
+					fAmounts("amount", strings.Split(p["amount"], ","), rev)
+				}
+			}
+		case "unbond":
+			// MsgUndelegate
+			parsed, err := groupEvents(ev)
+			if err != nil {
+				return err
+			}
+			if len(parsed) > 1 {
+				logger.Error(fmt.Errorf("multiple unbond events")) // is that possible?
+				panic("unbond")
+			}
+			// for _, p := range parsed {
+			// 	fAmounts("amount", strings.Split(p["amount"], ","), rev)
+			// }
+		default:
+			// other events for log purpouse
+			_, err := groupEvents(ev)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func (mapper *Mapper) MsgWithdrawValidatorCommission(msg []byte, lg types.ABCIMessageLog, rev *structs.RewardEvent) (err error) {
 	wvc := &distribution.MsgWithdrawValidatorCommission{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	// TODO  MsgSetWithdrawAddress ???
-	// https://docs.cosmos.network/master/modules/distribution/04_messages.html
+	rev.ValidatorDstAddress = wvc.ValidatorAddress
+	grouper(rev, lg, "withdraw_commission")
 
-	// mapped fields
-	rev.ValidatorSrcAddress = wvc.ValidatorAddress
-	// "cosmosvaloper1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2h4gvnl7"
-	// https://atomscan.com/transactions/0108F7BCF51BA2CF0BFFA9D5DDBCB963D0EF6C6C57707A95ADB81ED3DE689F86
-	// 2022/05/02 16:51:20 type coin_received attr receiver cosmos1dwq55ln00s7lv72jnxk2zdvz9cdz2yh9vdf85d
-	// 2022/05/02 16:51:20 type coin_received attr amount 74302uatom
-	// 2022/05/02 16:51:20 type coin_spent attr spender cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl
-	// 2022/05/02 16:51:20 type coin_spent attr amount 74302uatom
-	// 2022/05/02 16:51:20 type message attr action /cosmos.distribution.v1beta1.MsgWithdrawValidatorCommission
-	// 2022/05/02 16:51:20 type message attr sender cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl
-	// 2022/05/02 16:51:20 type message attr module distribution
-	// 2022/05/02 16:51:20 type message attr sender cosmosvaloper1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2h4gvnl7
-	// 2022/05/02 16:51:20 type transfer attr recipient cosmos1dwq55ln00s7lv72jnxk2zdvz9cdz2yh9vdf85d
-	// 2022/05/02 16:51:20 type transfer attr sender cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl
-	// 2022/05/02 16:51:20 type transfer attr amount 74302uatom
-	// 2022/05/02 16:51:20 type withdraw_commission attr amount 74302uatom
-
-	for _, ev := range lg.GetEvents() {
-		for _, attr := range ev.GetAttributes() {
-			log.Println("type", ev.GetType(), "attr", attr.Key, attr.Value)
-		}
-
-	}
-	log.Println("dupa")
 	return nil
 }
 
-// DistributionWithdrawValidatorCommissionToSub transforms distribution.MsgWithdrawDelegatorReward sdk messages to SubsetEvent
 func (mapper *Mapper) MsgWithdrawDelegatorReward(msg []byte, lg types.ABCIMessageLog, rev *structs.RewardEvent) (err error) {
 	wvc := &distribution.MsgWithdrawDelegatorReward{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	// mapped fields
 	rev.DelegatorAddress = wvc.DelegatorAddress
 	rev.ValidatorSrcAddress = wvc.ValidatorAddress
-
-	// TODO add amont/reward
-	for _, ev := range lg.GetEvents() {
-		for _, attr := range ev.GetAttributes() {
-			log.Println("type", ev.GetType(), "attr", attr.Key, attr.Value)
-			if ev.GetType() == "withdraw_rewards" && attr.Key == "amount" {
-				fAmounts("reward", strings.Split(attr.Value, ","), rev)
-			}
-		}
-	}
+	grouper(rev, lg, "coin_received")
+	// ZBADAC CO SI ETU DZEJE
 
 	return nil
 }
@@ -92,49 +197,7 @@ func (mapper *Mapper) MsgUndelegate(msg []byte, lg types.ABCIMessageLog, rev *st
 	// mapped fields
 	rev.DelegatorAddress = wvc.DelegatorAddress
 	rev.ValidatorSrcAddress = wvc.ValidatorAddress
-
-	// https://atomscan.com/blocks/10337615
-	// ValidatorSrcAddress "cosmosvaloper1hjadhj9nqzpye2vkmkz4thahhd0z8dh3udhq74"
-	// DelegatorAddress "cosmos1w2zw9ngef2zwhssmafpaew9czkxxtluf3shv5t"
-	// Amounts "60176517uatom"
-	// Rewards "156082uatom"
-
-	// coin "receiver"  "cosmos1w2zw9ngef2zwhssmafpaew9czkxxtluf3shv5t" got "156082uatom"
-	// coin "receiver"  "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r" got  "60176517uatom"
-	// coin "spender"  "cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl"  spent "156082uatom"
-	// coin "spender" "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh" spent "60176517uatom"
-
-	// unbond "validator" "cosmosvaloper1hjadhj9nqzpye2vkmkz4thahhd0z8dh3udhq74"
-	// unbond "amount" "60176517uatom"
-	// unbond "completion_time" "2022-05-23T13:44:49Z"
-
-	// transfer "recipient" "cosmos1w2zw9ngef2zwhssmafpaew9czkxxtluf3shv5t"
-	// transfer "sender" "cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl"
-	// transfer "amount" "156082uatom"
-
-	// transfer "recipient" "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r"
-	// transfer "sender" "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh"
-	// transfer "amount" "60176516uatom"
-
-	log.Print("------ wvc", wvc)
-	for _, ev := range lg.GetEvents() {
-		attr := ev.GetAttributes()
-		if ev.GetType() == "coin_received" {
-			log.Println("coin_received", len(attr)/2)
-			for i := 0; i < len(attr); i = i + 2 {
-				log.Println("pair?", i, attr[i].Key, attr[i].Value, attr[i+1].Key, attr[i+1].Value)
-				if attr[i].Key == "receiver" && attr[i+1].Key == "amount" {
-					if attr[i].Value == rev.DelegatorAddress {
-						fAmounts("reward", strings.Split(attr[i+1].Value, ","), rev)
-					} else {
-						fAmounts("amount", strings.Split(attr[i+1].Value, ","), rev)
-					}
-				}
-			}
-			log.Println("amount")
-		}
-		log.Println("amount33")
-	}
+	grouper(rev, lg, "coin_received")
 
 	return nil
 }
@@ -146,47 +209,9 @@ func (mapper *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog, rev *stru
 		return fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	// mapped fields
 	rev.DelegatorAddress = wvc.DelegatorAddress
 	rev.ValidatorDstAddress = wvc.ValidatorAddress
-
-	// debug :
-	// https://atomscan.com/transactions/71A644FF56F3A06048DC621F16B05FB948CC5AD1F8FD0DB629B0EDE2689F9709
-
-	// ValidatorDstAddress "cosmosvaloper1vvwtk805lxehwle9l4yudmq6mn0g32px9xtkhc"
-	// DelegatorAddress "cosmos14nh2dy06lvfh4fm65z5k4l44h5cwggefj70y3w"
-	// Amounts "65000000uatom"
-	// Rewards "2021065uatom"
-	// coin "receiver"  "cosmos14nh2dy06lvfh4fm65z5k4l44h5cwggefj70y3w" got "2021065uatom"
-	// coin "receiver"  "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh" got  "65000000uatom"
-	// coin "spender"  "cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl"  spent "2021065uatom"
-	// coin "spender" "cosmos14nh2dy06lvfh4fm65z5k4l44h5cwggefj70y3w" spent "65000000uatom"
-	// deletage "validator" "cosmosvaloper1vvwtk805lxehwle9l4yudmq6mn0g32px9xtkhc"
-	// deletage "amount" "65000000uatom"
-	// delegate "new_shares" "65000000uatom"
-	// transfer "recipient" "cosmos14nh2dy06lvfh4fm65z5k4l44h5cwggefj70y3w"
-	// transfer "sender" "cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl"
-	// transfer "amount" "2021065uatom"
-
-	log.Print("------ wvc", wvc)
-	for _, ev := range lg.GetEvents() {
-		attr := ev.GetAttributes()
-		if ev.GetType() == "coin_received" {
-			log.Println("coin_received", len(attr)/2)
-			for i := 0; i < len(attr); i = i + 2 {
-				log.Println("pair?", i, attr[i].Key, attr[i].Value, attr[i+1].Key, attr[i+1].Value)
-				if attr[i].Key == "receiver" && attr[i+1].Key == "amount" {
-					if attr[i].Value == rev.DelegatorAddress {
-						fAmounts("reward", strings.Split(attr[i+1].Value, ","), rev)
-					} else {
-						fAmounts("amount", strings.Split(attr[i+1].Value, ","), rev)
-					}
-				}
-			}
-			log.Println("amount")
-		}
-		log.Println("amount33")
-	}
+	grouper(rev, lg, "coin_received")
 
 	return nil
 }
@@ -201,49 +226,61 @@ func (mapper *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog, re
 	rev.DelegatorAddress = wvc.DelegatorAddress
 	rev.ValidatorSrcAddress = wvc.ValidatorSrcAddress
 	rev.ValidatorDstAddress = wvc.ValidatorDstAddress
+	grouper(rev, lg, "redelegate")
 
-	// debug
-	// https://atomscan.com/blocks/10337936
-	// https://atomscan.com/transactions/3D9B7799A8CFD627903E201B7F1290217D8872C497C1AB270056DB8D6E7588A7
-
-	// ValidatorSrcAddress "cosmosvaloper196ax4vc0lwpxndu9dyhvca7jhxp70rmcvrj90c"
-	// ValidatorDstAddress "cosmosvaloper17mggn4znyeyg25wd7498qxl7r2jhgue8u4qjcq"
-	// DelegatorAddress "cosmos18d66t5p3x2tf5mjml58uchp22n3axuaxlh082l"
-	// Amounts 221000000uatom
-	// Rewards 115uatom ????
-
-	// 2022/05/02 16:21:38 type coin_received attr receiver cosmos18d66t5p3x2tf5mjml58uchp22n3axuaxlh082l
-	// 2022/05/02 16:21:38 type coin_received attr amount 115uatom
-	// 2022/05/02 16:21:38 type coin_spent attr spender cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl
-	// 2022/05/02 16:21:38 type coin_spent attr amount 115uatom
-	// 2022/05/02 16:21:38 type message attr action /cosmos.staking.v1beta1.MsgBeginRedelegate
-	// 2022/05/02 16:21:38 type message attr sender cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl
-	// 2022/05/02 16:21:38 type message attr module staking
-	// 2022/05/02 16:21:38 type message attr sender cosmos18d66t5p3x2tf5mjml58uchp22n3axuaxlh082l
-	// 2022/05/02 16:21:38 type redelegate attr source_validator cosmosvaloper196ax4vc0lwpxndu9dyhvca7jhxp70rmcvrj90c
-	// 2022/05/02 16:21:38 type redelegate attr destination_validator cosmosvaloper17mggn4znyeyg25wd7498qxl7r2jhgue8u4qjcq
-	// 2022/05/02 16:21:38 type redelegate attr amount 221000000uatom
-	// 2022/05/02 16:21:38 type redelegate attr completion_time 2022-05-23T14:21:28Z
-	// 2022/05/02 16:21:38 type transfer attr recipient cosmos18d66t5p3x2tf5mjml58uchp22n3axuaxlh082l
-	// 2022/05/02 16:21:38 type transfer attr sender cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl
-	// 2022/05/02 16:21:38 type transfer attr amount 115uatom
-
-	log.Print("------ wvc", wvc)
-	for _, ev := range lg.GetEvents() {
-
-		if ev.GetType() == "redelegate" {
-			for _, attr := range ev.GetAttributes() {
-				if attr.Key == "amount" {
-					fAmounts("amount", strings.Split(attr.Value, ","), rev)
-				}
-			}
-
-		}
-		log.Println("amount33")
-	}
-	log.Println("end")
 	return nil
 }
+
+// func (mapper *Mapper) MsgEditValidator(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+// 	wvc := &staking.MsgEditValidator{}
+// 	if err := proto.Unmarshal(msg, wvc); err != nil {
+// 		return rev, fmt.Errorf("not a distribution type: %w", err)
+// 	}
+
+// 	rev = &rewstruct.Tx{}
+
+// 	rev.Type = "MsgEditValidator"
+// 	return rev, nil
+// }
+
+// func (mapper *Mapper) MsgCreateValidator(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+// 	wvc := &staking.MsgCreateValidator{}
+// 	if err := proto.Unmarshal(msg, wvc); err != nil {
+// 		return rev, fmt.Errorf("not a distribution type: %w", err)
+// 	}
+
+// 	rev = &rewstruct.Tx{}
+// 	rev.Delegator = wvc.DelegatorAddress
+// 	rev.Validator = []string{wvc.ValidatorAddress}
+
+// 	rev.Type = "MsgCreateValidator"
+// 	return rev, nil
+// }
+
+// func (mapper *Mapper) MsgSetWithdrawAddress(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+// 	wvc := &distribution.MsgSetWithdrawAddress{}
+// 	if err := proto.Unmarshal(msg, wvc); err != nil {
+// 		return rev, fmt.Errorf("not a distribution type: %w", err)
+// 	}
+
+// 	rev = &rewstruct.Tx{}
+// 	// mapped fields
+// 	rev.Type = "MsgWithdrawDelegatorReward"
+// 	return rev, nil
+// }
+
+// func (mapper *Mapper) MsgFundCommunityPool(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+// 	wvc := &distribution.MsgFundCommunityPool{}
+// 	if err := proto.Unmarshal(msg, wvc); err != nil {
+// 		return rev, fmt.Errorf("not a distribution type: %w", err)
+// 	}
+
+// 	rev = &rewstruct.Tx{}
+// 	rev.Sender = []string{wvc.Depositor}
+
+// 	rev.Type = "MsgFundCommunityPool"
+// 	return rev, nil
+// }
 
 func fAmounts(field string, amounts []string, rev *structs.RewardEvent) (err error) {
 	for _, amt := range amounts {
@@ -276,4 +313,74 @@ func fAmounts(field string, amounts []string, rev *structs.RewardEvent) (err err
 		}
 	}
 	return nil
+}
+
+func fAmounts2(field string, amounts []string) (am, rew []*rewstruct.Amount, err error) {
+	for _, amt := range amounts {
+		attrAmt := &rewstruct.Amount{}
+		sliced := util.GetCurrency(amt)
+		var (
+			c       *big.Int
+			exp     int32
+			coinErr error
+		)
+		if len(sliced) == 3 {
+			attrAmt.Currency = sliced[2]
+			c, exp, coinErr = util.GetCoin(sliced[1])
+		} else {
+			c, exp, coinErr = util.GetCoin(amt)
+		}
+		if coinErr != nil {
+			return nil, nil, fmt.Errorf("[COSMOS-API] Error parsing amount '%s': %s ", amt, coinErr)
+		}
+
+		attrAmt.Numeric = c.Bytes()
+		attrAmt.Text = amt
+		attrAmt.Exp = exp
+
+		if field == "amount" {
+			am = append(am, attrAmt)
+		} else if field == "reward" {
+			rew = append(rew, attrAmt)
+		}
+	}
+	return am, rew, nil
+}
+
+func groupEvents(ev types.StringEvent) (result [](map[string]string), err error) {
+	attr := ev.GetAttributes()
+	etype := ev.GetType()
+	// elm - events length map
+	elm := map[string]int{
+		"coin_received":       2,         // multiple events
+		"coin_spent":          2,         // multiple events
+		"message":             len(attr), // 3 or 4 keys :/
+		"transfer":            3,
+		"withdraw_commission": 1, // MsgWithdrawValidatorCommission
+		"withdraw_rewards":    2, // MsgWithdrawDelegatorReward
+		"redelegate":          4, // MsgBeginRedelegate
+		"delegate":            3, // MsgDelegate
+		"unbond":              3, // MsgUndelegate
+	}
+
+	elen, exists := elm[etype]
+	if !exists {
+		return result, fmt.Errorf("missing in events length map: %s", etype)
+	}
+
+	for i := 0; i < len(attr); i = i + elen {
+		emap := make(map[string]string)
+		for j := 0; j < elen; j++ {
+			emap[attr[i+j].Key] = attr[i+j].Value
+			log.Println("type", etype, "key", attr[i+j].Key, "Value", attr[i+j].Value)
+		}
+		if len(emap) < elen {
+			// logs ->0 ->events ->type message
+			// https://www.mintscan.io/cosmos/txs/0BA41D804ED0195CAD8D65BDFA80202F6C0267CBDBCBD3E71CC3BB78DE40BACC
+			log.Println("duplicated keys in event list, which may contain different data", attr)
+		}
+		result = append(result, emap)
+	}
+
+	return result, nil
 }
