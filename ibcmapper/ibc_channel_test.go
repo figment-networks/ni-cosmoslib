@@ -1,10 +1,9 @@
-package mapper_test
+package ibcmapper
 
 import (
 	"testing"
 
 	channel "github.com/cosmos/ibc-go/modules/core/04-channel/types"
-	mapper "github.com/figment-networks/ni-cosmoslib/figment/api/ibc_mapper"
 )
 
 func TestIBCChannelRecvPacketToSub(t *testing.T) {
@@ -18,7 +17,7 @@ func TestIBCChannelRecvPacketToSub(t *testing.T) {
 		return
 	}
 
-	subsetEvent, err := mapper.IBCChannelRecvPacketToSub(bMsg)
+	subsetEvent, err := IBCChannelRecvPacketToSub(bMsg)
 	if err != nil {
 		t.Errorf("unexpected err: %s", err.Error())
 	}

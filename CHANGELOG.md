@@ -1,5 +1,8 @@
 # Change Log
 
+## v0.0.6
+After v0.0.6 this repository was separated into multiple modules. Usage of this repo now requires importing the needed modules. Refer to the READMEs for instructions.
+
 ## 0.0.1-rc4
 
 

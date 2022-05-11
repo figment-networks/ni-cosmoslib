@@ -1,11 +1,11 @@
-package mapper
+package ibcmapper
 
 import (
 	"fmt"
 
 	"github.com/figment-networks/indexing-engine/structs"
 	shared "github.com/figment-networks/indexing-engine/structs"
-	"github.com/figment-networks/ni-cosmoslib/figment/api/util"
+	"github.com/figment-networks/ni-cosmoslib/api/util"
 
 	client "github.com/cosmos/ibc-go/modules/core/02-client/types"
 	"github.com/gogo/protobuf/proto"
