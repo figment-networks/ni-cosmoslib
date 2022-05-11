@@ -1,4 +1,4 @@
-module github.com/figment-networks/ni-cosmoslib/ibcmapper/v1
+module github.com/figment-networks/ni-cosmoslib/ibcmapper
 
 go 1.18
 
