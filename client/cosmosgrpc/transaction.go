@@ -69,14 +69,13 @@ func (c *Client) GetRawTxs(ctx context.Context, height, perPage uint64) (txs []*
 // skipIfUnresolvable fetch the tx one at a time skipping any unresolvable types.
 func (c *Client) skipIfUnresolvable(ctx context.Context, height uint64, pag *query.PageRequest, currentTxCnt uint64, err error) (grpcRes *tx.GetTxsEventResponse, nskipped uint64, errOut error) {
 
-	if c.errorResolve != nil && !c.errorResolve.Check(err) {
+	if !c.errorResolve.Check(err) {
 		return nil, 0, err
 	}
 
 	grpcRes = &tx.GetTxsEventResponse{}
 
 	c.logger.Error("Skipping unresolvable height", zap.Error(err), zap.Uint64("height", height))
-
 	grpcRes.Txs = make([]*tx.Tx, 0, pag.Limit)
 	grpcRes.TxResponses = make([]*types.TxResponse, 0, pag.Limit)
 
@@ -101,7 +100,7 @@ func (c *Client) skipIfUnresolvable(ctx context.Context, height uint64, pag *que
 				break
 			}
 			// if the tx at this height is an un-parseable message type, skip.
-			if c.errorResolve != nil && !c.errorResolve.Check(err) {
+			if !c.errorResolve.Check(err) {
 				offset++
 				skippedTxCount++
 				if transactionTotalFound {

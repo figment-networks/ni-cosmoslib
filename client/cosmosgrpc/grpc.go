@@ -23,6 +23,12 @@ type ErrorResolve interface {
 	Check(err error) bool
 }
 
+type NOOPErrorResolve struct{}
+
+func (ner *NOOPErrorResolve) Check(err error) bool {
+	return false
+}
+
 // Client is a Tendermint RPC client for cosmos using figmentnetworks datahub
 type Client struct {
 	logger       *zap.Logger
@@ -42,6 +48,7 @@ type Client struct {
 func NewClient(logger *zap.Logger, cli *grpc.ClientConn, cfg *ClientConfig) *Client {
 	return &Client{
 		logger:             logger,
+		errorResolve:       &NOOPErrorResolve{},
 		tmServiceClient:    tmservice.NewServiceClient(cli),
 		txServiceClient:    tx.NewServiceClient(cli),
 		distributionClient: distributionTypes.NewQueryClient(cli),
