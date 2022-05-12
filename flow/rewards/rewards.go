@@ -41,6 +41,13 @@ type Crossing struct {
 	Sequence uint64
 }
 
+func (c *Crossing) GetHeight() uint64 {
+	return c.Height
+}
+func (c *Crossing) GetSequence() uint64 {
+	return c.Sequence
+}
+
 type HeightTime struct {
 	Height uint64
 	Time   time.Time
@@ -49,6 +56,21 @@ type HeightTime struct {
 type HeightError struct {
 	Height uint64
 	Error  error
+}
+
+type DelegatorOP int64
+
+const (
+	DelegatorOPAdd DelegatorOP = iota
+	DelegatorOPRemove
+	DelegatorOPBoth
+)
+
+type DelegatorValidator struct {
+	Op        DelegatorOP
+	Delegator string
+	Validator string
+	Amounts   []*rewstruct.Amount
 }
 
 type RewardProducer interface {
@@ -95,7 +117,7 @@ func NewRewardsExtraction(logger *zap.Logger, cfg RewardsExtractionConfig, clien
 	}
 }
 
-func (re *RewardsExtraction) FetchHeights(ctx context.Context, startHeight, endHeight, sequence uint64) (h structs.Heights, crossingHeights []Crossing, err error) {
+func (re *RewardsExtraction) FetchHeights(ctx context.Context, startHeight, endHeight, sequence uint64) (h structs.Heights, crossingHeights []structs.Crossing, err error) {
 	const fetchTxWorkersNumber = 24
 
 	txStream, err := re.dsClient.StoreRecords(ctx)
@@ -126,7 +148,7 @@ FETCH_HEIGHTS_LOOP:
 
 		timeID := uint64(math.Floor(float64(block.Header.Time.Truncate(time.Hour).Unix()) / 3600))
 		if sequence != timeID {
-			crossingHeights = append(crossingHeights, Crossing{
+			crossingHeights = append(crossingHeights, &Crossing{
 				Height:   height,
 				Sequence: timeID,
 			})

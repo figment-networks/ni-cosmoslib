@@ -23,7 +23,7 @@ type Mapper struct {
 // withdraw validator commision -> validator rewards
 
 // ParseRewardEvent converts a cosmos event from the log to a Subevent type and adds it to the provided RewardEvent struct
-func ParseRewardEvent(module, msgType string, raw []byte, lg types.ABCIMessageLog, ma Mapper) (rev *rewstruct.Tx, err error) {
+func ParseRewardEvent(module, msgType string, raw []byte, lg types.ABCIMessageLog, ma *Mapper) (rev *rewstruct.Tx, err error) {
 
 	switch module {
 	case "distribution":
