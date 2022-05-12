@@ -44,7 +44,7 @@ func (c *Client) GetRawTxs(ctx context.Context, height, perPage uint64) (txs []*
 		}, grpc.WaitForReady(true))
 		cancel()
 
-		c.logger.Debug("[OSMOSIS-API] Request Time (GetTxsEvent)", zap.Duration("duration", time.Now().Sub(now)))
+		c.logger.Debug("Request Time (GetTxsEvent)", zap.Duration("duration", time.Now().Sub(now)))
 		if err != nil {
 			ngrpcRes, nskipped, err := c.skipIfUnresolvable(ctx, height, pag, uint64(len(txs)), err)
 			if err != nil {
@@ -100,7 +100,7 @@ func (c *Client) skipIfUnresolvable(ctx context.Context, height uint64, pag *que
 				break
 			}
 			// if the tx at this height is an un-parseable message type, skip.
-			if !c.errorResolve.Check(err) {
+			if c.errorResolve.Check(err) {
 				offset++
 				skippedTxCount++
 				if transactionTotalFound {
