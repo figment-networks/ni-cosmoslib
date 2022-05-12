@@ -609,14 +609,18 @@ func addRewards(newdelegs *rewstruct.Delegators, delegation DelegateResponse) {
 
 func calculate(previousdelegs *rewstruct.Delegators, newdelegs *rewstruct.Delegators, claims map[string][]structs.ClaimedReward) (earnedRewards []*rewstruct.SimpleReward) {
 	earnedRewards = []*rewstruct.SimpleReward{}
+	claimedDelegators := make(map[string]struct{})
 	for d := range newdelegs.Delegators {
 		earned := calculateInternal(d, previousdelegs.Delegators[d], newdelegs.Delegators[d], claims[d])
 		for _, reward := range earned {
 			earnedRewards = append(earnedRewards, reward)
 		}
-		delete(claims, d)
+		claimedDelegators[d] = struct{}{}
 	}
 	for d := range claims {
+		if _, ok := claimedDelegators[d]; ok {
+			continue
+		}
 		xnewdel := &rewstruct.ValidatorsUnclaimed{}
 		earned := calculateInternal(d, previousdelegs.Delegators[d], xnewdel, claims[d])
 		for _, reward := range earned {
