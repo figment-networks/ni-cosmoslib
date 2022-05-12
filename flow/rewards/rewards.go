@@ -59,7 +59,7 @@ type RewardProducer interface {
 
 type Client interface {
 	GetBlock(ctx context.Context, height uint64) (block *ttypes.Block, blockID *ttypes.BlockID, err error)
-	GetRawTxs(ctx context.Context, r structs.HeightHash, perPage uint64) (txs []*tx.Tx, txResponses []*types.TxResponse, err error)
+	GetRawTxs(ctx context.Context, height uint64, perPage uint64) (txs []*tx.Tx, txResponses []*types.TxResponse, err error)
 
 	GetHeightValidators(ctx context.Context, height, limit, page uint64) (vals []cosmosgrpc.Validator, err error)
 	GetDelegators(ctx context.Context, height uint64, operatorAddress string, limit, page uint64) (vals []cosmosgrpc.DelegationResponse, err error)
@@ -377,7 +377,7 @@ func (re *RewardsExtraction) fetchHeightData(ctx context.Context, heights chan H
 
 			r := HeightError{Height: height.Height}
 
-			rawTxs, rewTxResps, err := re.client.GetRawTxs(ctx, structs.HeightHash{Height: height.Height}, 100)
+			rawTxs, rewTxResps, err := re.client.GetRawTxs(ctx, height.Height, 100)
 			if err != nil {
 				r.Error = fmt.Errorf("error getting raw tx (%d): %w ", height.Height, err)
 				resp <- r
