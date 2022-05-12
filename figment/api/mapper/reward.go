@@ -196,7 +196,7 @@ func (mapper *Mapper) MsgWithdrawDelegatorReward(msg []byte, lg types.ABCIMessag
 	if err != nil {
 		return rev, err
 	}
-	// ZBADAC CO SI ETU DZEJE
+	// validate it
 
 	return rev, nil
 }
