@@ -2,7 +2,6 @@ package reward
 
 import (
 	"fmt"
-	"log"
 	"math/big"
 	"strings"
 
@@ -13,9 +12,11 @@ import (
 	"github.com/figment-networks/indexing-engine/worker/logger"
 	"github.com/figment-networks/ni-cosmoslib/figment/api/util"
 	"github.com/gogo/protobuf/proto"
+	"go.uber.org/zap"
 )
 
 type Mapper struct {
+	Logger *zap.Logger
 }
 
 // delegate undelegate redelegate, -> addresses
@@ -52,11 +53,10 @@ func ParseRewardEvent(module, msgType string, raw []byte, lg types.ABCIMessageLo
 		}
 
 	}
-
 	return
 }
 
-func grouper(lg types.ABCIMessageLog, delegator string, amount_by string) (rev *rewstruct.Tx, err error) {
+func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by string) (rev *rewstruct.Tx, err error) {
 	rev = &rewstruct.Tx{}
 	if len(lg.GetEvents()) > 5 {
 		err = fmt.Errorf("unexpected events length: %s", lg.GetEvents())
@@ -64,7 +64,7 @@ func grouper(lg types.ABCIMessageLog, delegator string, amount_by string) (rev *
 	}
 
 	for _, ev := range lg.GetEvents() {
-		parsed, err := groupEvents(ev)
+		parsed, err := m.groupEvents(ev)
 		if err != nil {
 			return rev, err
 		}
@@ -164,14 +164,14 @@ func grouper(lg types.ABCIMessageLog, delegator string, amount_by string) (rev *
 	return rev, err
 }
 
-func (mapper *Mapper) MsgWithdrawValidatorCommission(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+func (m *Mapper) MsgWithdrawValidatorCommission(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
 	//func (mapper *Mapper) MsgWithdrawValidatorCommission(msg []byte, lg types.ABCIMessageLog, rev *structs.RewardEvent) (err error) {
 	wvc := &distribution.MsgWithdrawValidatorCommission{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev, err = grouper(lg, "", "withdraw_commission")
+	rev, err = m.grouper(lg, "", "withdraw_commission")
 	if err != nil {
 		return rev, err
 	}
@@ -181,13 +181,13 @@ func (mapper *Mapper) MsgWithdrawValidatorCommission(msg []byte, lg types.ABCIMe
 	return rev, nil
 }
 
-func (mapper *Mapper) MsgWithdrawDelegatorReward(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+func (m *Mapper) MsgWithdrawDelegatorReward(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
 	wvc := &distribution.MsgWithdrawDelegatorReward{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev, err = grouper(lg, wvc.DelegatorAddress, "coin_received")
+	rev, err = m.grouper(lg, wvc.DelegatorAddress, "coin_received")
 	if err != nil {
 		return rev, err
 	}
@@ -201,13 +201,13 @@ func (mapper *Mapper) MsgWithdrawDelegatorReward(msg []byte, lg types.ABCIMessag
 }
 
 // DistributionWithdrawValidatorCommissionToSub transforms distribution.MsgUndelegate sdk messages to SubsetEvent
-func (mapper *Mapper) MsgUndelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+func (m *Mapper) MsgUndelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
 	wvc := &staking.MsgUndelegate{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev, err = grouper(lg, wvc.DelegatorAddress, "coin_received")
+	rev, err = m.grouper(lg, wvc.DelegatorAddress, "coin_received")
 	if err != nil {
 		return rev, err
 	}
@@ -218,14 +218,14 @@ func (mapper *Mapper) MsgUndelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 	return rev, nil
 }
 
-// DistributionWithdrawValidatorCommissionToSub transforms distribution.MsgDelegate sdk messages to SubsetEvent
-func (mapper *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+// m transforms distribution.MsgDelegate sdk messages to SubsetEvent
+func (m *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
 	wvc := &staking.MsgDelegate{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev, err = grouper(lg, wvc.DelegatorAddress, "coin_received")
+	rev, err = m.grouper(lg, wvc.DelegatorAddress, "coin_received")
 	if err != nil {
 		return rev, err
 	}
@@ -237,13 +237,13 @@ func (mapper *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rew
 }
 
 // DistributionWithdrawValidatorCommissionToSub transforms distribution.MsgBeginRedelegate sdk messages to SubsetEvent
-func (mapper *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
 	wvc := &staking.MsgBeginRedelegate{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev, err = grouper(lg, wvc.DelegatorAddress, "redelegate")
+	rev, err = m.grouper(lg, wvc.DelegatorAddress, "redelegate")
 	if err != nil {
 		return rev, err
 	}
@@ -255,7 +255,7 @@ func (mapper *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (r
 	return rev, nil
 }
 
-func (mapper *Mapper) MsgEditValidator(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+func (m *Mapper) MsgEditValidator(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
 	wvc := &staking.MsgEditValidator{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
@@ -272,7 +272,7 @@ func (mapper *Mapper) MsgEditValidator(msg []byte, lg types.ABCIMessageLog) (rev
 	return rev, nil
 }
 
-func (mapper *Mapper) MsgCreateValidator(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+func (m *Mapper) MsgCreateValidator(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
 	wvc := &staking.MsgCreateValidator{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
@@ -291,7 +291,7 @@ func (mapper *Mapper) MsgCreateValidator(msg []byte, lg types.ABCIMessageLog) (r
 	return rev, nil
 }
 
-func (mapper *Mapper) MsgSetWithdrawAddress(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+func (m *Mapper) MsgSetWithdrawAddress(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
 	wvc := &distribution.MsgSetWithdrawAddress{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
@@ -308,7 +308,7 @@ func (mapper *Mapper) MsgSetWithdrawAddress(msg []byte, lg types.ABCIMessageLog)
 	return rev, nil
 }
 
-func (mapper *Mapper) MsgFundCommunityPool(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+func (m *Mapper) MsgFundCommunityPool(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
 	wvc := &distribution.MsgFundCommunityPool{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
@@ -354,7 +354,7 @@ func fAmounts(amounts []string) (am []*rewstruct.Amount, err error) {
 	return am, nil
 }
 
-func groupEvents(ev types.StringEvent) (result [](map[string]string), err error) {
+func (m *Mapper) groupEvents(ev types.StringEvent) (result [](map[string]string), err error) {
 	attr := ev.GetAttributes()
 	etype := ev.GetType()
 	// elm - events length map
@@ -378,13 +378,16 @@ func groupEvents(ev types.StringEvent) (result [](map[string]string), err error)
 	for i := 0; i < len(attr); i = i + elen {
 		emap := make(map[string]string)
 		for j := 0; j < elen; j++ {
+			if len(attr) <= i+j {
+				return result, fmt.Errorf("parse error")
+			}
 			emap[attr[i+j].Key] = attr[i+j].Value
-			log.Println("type", etype, "key", attr[i+j].Key, "Value", attr[i+j].Value)
+			m.Logger.Debug("event", zap.String("type", etype), zap.String("Key", attr[i+j].Key), zap.String("Value", attr[i+j].Value))
 		}
 		if len(emap) < elen {
 			// logs ->0 ->events ->type message
 			// https://www.mintscan.io/cosmos/txs/0BA41D804ED0195CAD8D65BDFA80202F6C0267CBDBCBD3E71CC3BB78DE40BACC
-			log.Println("duplicated keys in event list, which may contain different data", attr)
+			m.Logger.Info("duplicated keys in event list", zap.String("type", etype), zap.Any("attr", attr))
 		}
 		result = append(result, emap)
 	}
