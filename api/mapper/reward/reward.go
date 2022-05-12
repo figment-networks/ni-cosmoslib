@@ -23,7 +23,7 @@ type Mapper struct {
 // withdraw validator commision -> validator rewards
 
 // ParseRewardEvent converts a cosmos event from the log to a Subevent type and adds it to the provided RewardEvent struct
-func ParseRewardEvent(module, msgType string, raw []byte, lg types.ABCIMessageLog, ma Mapper) (rev *rewstruct.Tx, err error) {
+func ParseRewardEvent(module, msgType string, raw []byte, lg types.ABCIMessageLog, ma *Mapper) (rev *rewstruct.Tx, err error) {
 
 	switch module {
 	case "distribution":
@@ -56,11 +56,13 @@ func ParseRewardEvent(module, msgType string, raw []byte, lg types.ABCIMessageLo
 	return
 }
 
-func grouper(lg types.ABCIMessageLog, amount_by string) (rev *rewstruct.Tx, err error) {
+func grouper(lg types.ABCIMessageLog, delegator string, amount_by string) (rev *rewstruct.Tx, err error) {
+	rev = &rewstruct.Tx{}
 	if len(lg.GetEvents()) > 5 {
 		err = fmt.Errorf("unexpected events length: %s", lg.GetEvents())
 		logger.Error(err) // It would be good to test that kind of event
 	}
+
 	for _, ev := range lg.GetEvents() {
 		parsed, err := groupEvents(ev)
 		if err != nil {
@@ -79,7 +81,7 @@ func grouper(lg types.ABCIMessageLog, amount_by string) (rev *rewstruct.Tx, err 
 					rev.Recipient = append(rev.Recipient, p["receiver"])
 
 					switch p["receiver"] {
-					case rev.Delegator:
+					case delegator:
 						am, err := fAmounts(strings.Split(p["amount"], ","))
 						if err != nil {
 							return rev, err
@@ -96,7 +98,7 @@ func grouper(lg types.ABCIMessageLog, amount_by string) (rev *rewstruct.Tx, err 
 			} else if amount_by == "redelegate" {
 				for _, p := range parsed {
 					rev.Recipient = append(rev.Recipient, p["receiver"])
-					if p["receiver"] == rev.Delegator {
+					if p["receiver"] == delegator {
 						am, err := fAmounts(strings.Split(p["amount"], ","))
 						if err != nil {
 							return rev, err
@@ -153,13 +155,10 @@ func grouper(lg types.ABCIMessageLog, amount_by string) (rev *rewstruct.Tx, err 
 			// 	fAmounts("amount", strings.Split(p["amount"], ","), rev)
 			// }
 		default:
-			err = fmt.Errorf("unsupported event: %s", ev.GetType())
-			logger.Warn(err.Error())
+			// err = fmt.Errorf("unsupported event: %s", ev.GetType())
+			// logger.Error(err)
 			// other events for log purpouse
-			_, err := groupEvents(ev)
-			if err != nil {
-				return rev, err
-			}
+			continue
 		}
 	}
 	return rev, err
@@ -172,14 +171,12 @@ func (mapper *Mapper) MsgWithdrawValidatorCommission(msg []byte, lg types.ABCIMe
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev = &rewstruct.Tx{}
-	rev.Type = "MsgWithdrawValidatorCommission"
-	rev.ValidatorDst = wvc.ValidatorAddress
-
-	rev, err = grouper(lg, "withdraw_commission")
+	rev, err = grouper(lg, "", "withdraw_commission")
 	if err != nil {
 		return rev, err
 	}
+	rev.Type = "MsgWithdrawValidatorCommission"
+	rev.ValidatorDst = wvc.ValidatorAddress
 
 	return rev, nil
 }
@@ -190,15 +187,14 @@ func (mapper *Mapper) MsgWithdrawDelegatorReward(msg []byte, lg types.ABCIMessag
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev = &rewstruct.Tx{}
+	rev, err = grouper(lg, wvc.DelegatorAddress, "coin_received")
+	if err != nil {
+		return rev, err
+	}
 	rev.Type = "MsgWithdrawDelegatorReward"
 	rev.Delegator = wvc.DelegatorAddress
 	rev.ValidatorSrc = wvc.ValidatorAddress
 
-	rev, err = grouper(lg, "coin_received")
-	if err != nil {
-		return rev, err
-	}
 	// validate it
 
 	return rev, nil
@@ -211,15 +207,13 @@ func (mapper *Mapper) MsgUndelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev = &rewstruct.Tx{}
-	rev.Type = "MsgUndelegate"
-	rev.Delegator = wvc.DelegatorAddress
-	rev.ValidatorSrc = wvc.ValidatorAddress
-
-	rev, err = grouper(lg, "coin_received")
+	rev, err = grouper(lg, wvc.DelegatorAddress, "coin_received")
 	if err != nil {
 		return rev, err
 	}
+	rev.Type = "MsgUndelegate"
+	rev.Delegator = wvc.DelegatorAddress
+	rev.ValidatorSrc = wvc.ValidatorAddress
 
 	return rev, nil
 }
@@ -231,15 +225,13 @@ func (mapper *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rew
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev = &rewstruct.Tx{}
-	rev.Type = "MsgDelegate"
-	rev.Delegator = wvc.DelegatorAddress
-	rev.ValidatorDst = wvc.ValidatorAddress
-
-	rev, err = grouper(lg, "coin_received")
+	rev, err = grouper(lg, wvc.DelegatorAddress, "coin_received")
 	if err != nil {
 		return rev, err
 	}
+	rev.Type = "MsgDelegate"
+	rev.Delegator = wvc.DelegatorAddress
+	rev.ValidatorDst = wvc.ValidatorAddress
 
 	return rev, nil
 }
@@ -251,16 +243,14 @@ func (mapper *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (r
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev = &rewstruct.Tx{}
+	rev, err = grouper(lg, wvc.DelegatorAddress, "redelegate")
+	if err != nil {
+		return rev, err
+	}
 	rev.Type = "MsgBeginRedelegate"
 	rev.Delegator = wvc.DelegatorAddress
 	rev.ValidatorSrc = wvc.ValidatorSrcAddress
 	rev.ValidatorDst = wvc.ValidatorDstAddress
-
-	rev, err = grouper(lg, "redelegate")
-	if err != nil {
-		return rev, err
-	}
 
 	return rev, nil
 }
