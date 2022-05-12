@@ -8,6 +8,7 @@ import (
 	"io"
 	"math"
 	"math/big"
+	"strings"
 	"time"
 
 	ttypes "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -835,9 +836,11 @@ func (re *RewardsExtraction) fetchInitialAccounts(ctx context.Context, height ui
 	for _, v := range validators {
 		deleg, err := re.client.GetDelegators(ctx, height, v.OperatorAddress, 0, re.cfg.DelegatorFetchPage)
 		if err != nil {
-			//	if strings.Contains(err.Error(), "validator does not exist") { // we don't care on initial set it;s returned of unbonded
-			//		continue
-			//	}
+			// GetHeightValidators can produce Delegators not at this height
+			// this is ok b/c we are just trying to fetch an initial list at this height.
+			if strings.Contains(err.Error(), "validator does not exist") {
+				continue
+			}
 			return accounts, fmt.Errorf("Error getting delegators %w", err)
 		}
 		for _, d := range deleg {
