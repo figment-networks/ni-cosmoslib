@@ -298,7 +298,7 @@ func (m *Mapper) MsgSetWithdrawAddress(msg []byte, lg types.ABCIMessageLog) (rev
 	}
 
 	rev = &rewstruct.Tx{}
-	rev.Type = "MsgWithdrawDelegatorReward"
+	rev.Type = "MsgSetWithdrawAddress"
 
 	// rev, err = grouper(lg, "xxx")
 	// if err != nil {
@@ -354,7 +354,7 @@ func fAmounts(amounts []string) (am []*rewstruct.Amount, err error) {
 	return am, nil
 }
 
-func (m *Mapper) groupEvents(ev types.StringEvent) (result [](map[string]string), err error) {
+func (m *Mapper) groupEvents(ev types.StringEvent) (result []map[string]string, err error) {
 	attr := ev.GetAttributes()
 	etype := ev.GetType()
 	// elm - events length map
