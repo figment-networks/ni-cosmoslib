@@ -3,6 +3,7 @@ package cosmosgrpc
 import (
 	"context"
 	"strconv"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc/metadata"
@@ -102,6 +103,10 @@ func (c *Client) GetDelegators(ctx context.Context, height uint64, operatorAddre
 		vd, err := c.stakingClient.ValidatorDelegations(metadata.AppendToOutgoingContext(ctx, grpctypes.GRPCBlockHeightHeader, strconv.FormatUint(height, 10)),
 			&stakingTypes.QueryValidatorDelegationsRequest{ValidatorAddr: operatorAddress, Pagination: pagination})
 		if err != nil {
+			// this is a legit error, no need to retry.
+			if strings.Contains(err.Error(), "validator does not exist") {
+				return vals, err
+			}
 			consecutiveErrors++
 			if consecutiveErrors < errorThreshold {
 				<-time.After(1 * time.Second)
