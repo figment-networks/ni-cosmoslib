@@ -67,20 +67,38 @@ type Client interface {
 	GetDelegations(ctx context.Context, height uint64, delegatorAddress string) (dels []cosmosgrpc.Delegators, err error)
 }
 
-type RewardsExtraction struct {
-	client Client
-
-	dsClient pb.DatastoreServiceClient
-
-	orp             RewardProducer
-	datastorePrefix string
-	logger          zap.Logger
+type RewardsExtractionConfig struct {
+	ValidatorFetchPage uint64
+	DelegatorFetchPage uint64
+	DatastorePrefix    string
+	ChainID            string
+	Network            string
 }
 
-func (of *RewardsExtraction) FetchHeights(ctx context.Context, startHeight, endHeight, sequence uint64) (h structs.Heights, crossingHeights []Crossing, err error) {
+type RewardsExtraction struct {
+	logger *zap.Logger
+	cfg    RewardsExtractionConfig
+
+	client   Client
+	dsClient pb.DatastoreServiceClient
+
+	orp RewardProducer
+}
+
+func NewRewardsExtraction(logger *zap.Logger, cfg RewardsExtractionConfig, client Client, dsClient pb.DatastoreServiceClient, orp RewardProducer) *RewardsExtraction {
+	return &RewardsExtraction{
+		client:   client,
+		dsClient: dsClient,
+		orp:      orp,
+		logger:   logger,
+		cfg:      cfg,
+	}
+}
+
+func (re *RewardsExtraction) FetchHeights(ctx context.Context, startHeight, endHeight, sequence uint64) (h structs.Heights, crossingHeights []Crossing, err error) {
 	const fetchTxWorkersNumber = 24
 
-	txStream, err := of.dsClient.StoreRecords(ctx)
+	txStream, err := re.dsClient.StoreRecords(ctx)
 	if err != nil {
 		return h, crossingHeights, fmt.Errorf("Error initializing fetchHeight store stream %w", err)
 	}
@@ -88,7 +106,7 @@ func (of *RewardsExtraction) FetchHeights(ctx context.Context, startHeight, endH
 	heights := make(chan HeightTime, fetchTxWorkersNumber)
 	resp := make(chan HeightError, fetchTxWorkersNumber+1)
 	for i := 0; i < fetchTxWorkersNumber; i++ {
-		go of.fetchHeightData(ctx, heights, resp, txStream)
+		go re.fetchHeightData(ctx, heights, resp, txStream)
 	}
 
 	var (
@@ -99,7 +117,7 @@ func (of *RewardsExtraction) FetchHeights(ctx context.Context, startHeight, endH
 
 FETCH_HEIGHTS_LOOP:
 	for height := startHeight; height < endHeight+1; height++ {
-		block, _, err := of.client.GetBlock(ctx, height)
+		block, _, err := re.client.GetBlock(ctx, height)
 		if err != nil {
 			h.ErrorAt = append(h.ErrorAt, height)
 			gErr = err
@@ -178,10 +196,10 @@ FETCH_HEIGHTS_LOOP:
 	return h, crossingHeights, nil
 }
 
-func (of *RewardsExtraction) CalculateRewards(ctx context.Context, height, sequence uint64) error {
+func (re *RewardsExtraction) CalculateRewards(ctx context.Context, height, sequence uint64) error {
 	// previous full hour accounts
-	accountData, err := of.dsClient.FetchRecord(ctx, &datastore.FetchRecordRequest{
-		Type:     of.datastorePrefix + "account_records",
+	accountData, err := re.dsClient.FetchRecord(ctx, &datastore.FetchRecordRequest{
+		Type:     re.cfg.DatastorePrefix + "account_records",
 		Sequence: sequence - 1,
 	})
 	if err != nil {
@@ -191,8 +209,8 @@ func (of *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 		if accountData.Error != ErrNoRows.Error() {
 			return fmt.Errorf("Error getting heights: %s", accountData.Error)
 		}
-		of.logger.Warn("Fetching Initial accounts for: ", zap.Uint64("height", height))
-		acc, err := of.fetchInitialAccounts(ctx, height)
+		re.logger.Warn("Fetching Initial accounts for: ", zap.Uint64("height", height))
+		acc, err := re.fetchInitialAccounts(ctx, height)
 		if err != nil {
 			return fmt.Errorf("Error fetching initial accounts: %w", err)
 		}
@@ -200,8 +218,8 @@ func (of *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 		if err != nil {
 			return err
 		}
-		ack, err := of.dsClient.StoreRecord(ctx, &datastore.Payload{
-			Type:     of.datastorePrefix + "account_records",
+		ack, err := re.dsClient.StoreRecord(ctx, &datastore.Payload{
+			Type:     re.cfg.DatastorePrefix + "account_records",
 			Sequence: sequence,
 			Content:  b,
 		})
@@ -222,8 +240,8 @@ func (of *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 	}
 
 	// Fetch Rewards from previous sequence
-	rewardsRaw, err := of.dsClient.FetchRecord(ctx, &datastore.FetchRecordRequest{
-		Type:     of.datastorePrefix + "reward_records",
+	rewardsRaw, err := re.dsClient.FetchRecord(ctx, &datastore.FetchRecordRequest{
+		Type:     re.cfg.DatastorePrefix + "reward_records",
 		Sequence: sequence - 1,
 	})
 	if err != nil {
@@ -242,14 +260,14 @@ func (of *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 		previousdelegs.Height = ah.Height
 	}
 
-	delegatorClaims, delegationDiff, err := of.fetchTransactions(ctx, of.orp, previousdelegs.Height+1, uint32(height-previousdelegs.Height))
+	delegatorClaims, delegationDiff, err := re.fetchTransactions(ctx, re.orp, previousdelegs.Height+1, uint32(height-previousdelegs.Height))
 	newAccounts := accountData.Content
 	if len(delegationDiff) > 0 {
 		for _, dv := range delegationDiff {
 			if dv.Op == DelegatorOPRemove {
 				// Delete non-delegators. Check if delagator is delegating to any validator
 				// in n+1 block. If not - remove
-				del, err := of.client.GetDelegations(ctx, height+1, dv.Delegator)
+				del, err := re.client.GetDelegations(ctx, height+1, dv.Delegator)
 				if err != nil {
 					return err
 				}
@@ -267,8 +285,8 @@ func (of *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 		}
 	}
 
-	ack, err := of.dsClient.StoreRecord(ctx, &datastore.Payload{
-		Type:     of.datastorePrefix + "account_records",
+	ack, err := re.dsClient.StoreRecord(ctx, &datastore.Payload{
+		Type:     re.cfg.DatastorePrefix + "account_records",
 		Sequence: sequence,
 		Content:  newAccounts,
 	})
@@ -279,14 +297,14 @@ func (of *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 		return fmt.Errorf("Error storinf account_records: %s", ack.Error)
 	}
 
-	newdelegs, err := of.fetchHeightUnclaimedRewards(ctx, height, sequence, ah.Accounts)
+	newdelegs, err := re.fetchHeightUnclaimedRewards(ctx, height, sequence, ah.Accounts)
 	if err != nil {
 		return err
 	}
 
 	finalEarned := &rewstruct.Rewards{
-		ChainId:  of.orp.ChainID,
-		Network:  of.orp.Network,
+		ChainId:  re.cfg.ChainID,
+		Network:  re.cfg.Network,
 		Sequence: sequence,
 		Time:     &rewstruct.Timestamp{Seconds: int64(sequence * 60 * 60)},
 		Height:   height,
@@ -309,8 +327,8 @@ func (of *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 		return err
 	}
 
-	ack, err = of.dsClient.StoreRecord(ctx, &datastore.Payload{
-		Type:     of.datastorePrefix + "earned_reward_records",
+	ack, err = re.dsClient.StoreRecord(ctx, &datastore.Payload{
+		Type:     re.cfg.DatastorePrefix + "earned_reward_records",
 		Sequence: sequence,
 		Content:  finalRewards,
 	})
@@ -326,7 +344,7 @@ func (of *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 
 }
 
-func (of *RewardsExtraction) fetchHeightData(ctx context.Context, heights chan HeightTime, resp chan HeightError, txStream datastore.DatastoreService_StoreRecordsClient) {
+func (re *RewardsExtraction) fetchHeightData(ctx context.Context, heights chan HeightTime, resp chan HeightError, txStream datastore.DatastoreService_StoreRecordsClient) {
 	for {
 		select {
 		case height, ok := <-heights:
@@ -334,7 +352,7 @@ func (of *RewardsExtraction) fetchHeightData(ctx context.Context, heights chan H
 				return
 			}
 
-			/*validators, err := of.client.GetHeightValidators(ctx, height.Height, 0, 100)
+			/*validators, err := re.client.GetHeightValidators(ctx, height.Height, 0, 100)
 			if err != nil {
 				errs <- err
 				return
@@ -347,7 +365,7 @@ func (of *RewardsExtraction) fetchHeightData(ctx context.Context, heights chan H
 			}
 			log.Println("3 ", time.Since(now))
 			err = vStream.Send(&datastore.Payload{
-				Type:     of.datastorePrefix + "validator_records",
+				Type:     re.datastorePrefix + "validator_records",
 				Sequence: height.Height,
 				Content:  vals,
 			})
@@ -359,13 +377,13 @@ func (of *RewardsExtraction) fetchHeightData(ctx context.Context, heights chan H
 
 			r := HeightError{Height: height.Height}
 
-			rawTxs, rewTxResps, err := of.client.GetRawTxs(ctx, structs.HeightHash{Height: height.Height}, 100)
+			rawTxs, rewTxResps, err := re.client.GetRawTxs(ctx, structs.HeightHash{Height: height.Height}, 100)
 			if err != nil {
 				r.Error = fmt.Errorf("error getting raw tx (%d): %w ", height.Height, err)
 				resp <- r
 				return
 			}
-			txs, err := of.orp.MapTransactions(rawTxs, rewTxResps, height.Time)
+			txs, err := re.orp.MapTransactions(rawTxs, rewTxResps, height.Time)
 			if err != nil {
 				r.Error = fmt.Errorf("error mapping transaction  (%d): %w ", height.Height, err)
 				resp <- r
@@ -380,7 +398,7 @@ func (of *RewardsExtraction) fetchHeightData(ctx context.Context, heights chan H
 
 			// every height - even empty one has to be written
 			err = txStream.Send(&datastore.Payload{
-				Type:     of.datastorePrefix + "tx_records",
+				Type:     re.cfg.DatastorePrefix + "tx_records",
 				Sequence: height.Height,
 				Content:  txr,
 			})
@@ -393,7 +411,7 @@ func (of *RewardsExtraction) fetchHeightData(ctx context.Context, heights chan H
 	}
 }
 
-func (of *RewardsExtraction) fetchHeightUnclaimedRewards(ctx context.Context, height, sequence uint64, accounts map[string]interface{}) (newdelegs *rewstruct.Delegators, err error) {
+func (re *RewardsExtraction) fetchHeightUnclaimedRewards(ctx context.Context, height, sequence uint64, accounts map[string]interface{}) (newdelegs *rewstruct.Delegators, err error) {
 
 	processing := make(chan string, 100)
 	outp := make(chan DelegateResponse, 100)
@@ -401,7 +419,7 @@ func (of *RewardsExtraction) fetchHeightUnclaimedRewards(ctx context.Context, he
 
 	nctx, cancel := context.WithCancel(ctx)
 	for i := 0; i < 20; i++ {
-		go of.UnclaimedFetcher(nctx, height, processing, outp)
+		go re.UnclaimedFetcher(nctx, height, processing, outp)
 	}
 	// populate all the accounts regardless of the error,
 	// upon failure UnclaimedFetcher would just pass through
@@ -432,7 +450,7 @@ func (of *RewardsExtraction) fetchHeightUnclaimedRewards(ctx context.Context, he
 		addRewards(newdelegs, delegation)
 
 		if counter%100 == 0 {
-			of.logger.Debug("Rewards for: ", zap.Int("rewards", counter))
+			re.logger.Debug("Rewards for: ", zap.Int("rewards", counter))
 		}
 
 		if counter == len(accounts) {
@@ -442,7 +460,7 @@ func (of *RewardsExtraction) fetchHeightUnclaimedRewards(ctx context.Context, he
 	cancel()
 
 	if dErr != nil {
-		of.logger.Error("Delegation error", zap.Error(dErr))
+		re.logger.Error("Delegation error", zap.Error(dErr))
 		return nil, fmt.Errorf("error getting delegation %w", dErr)
 	}
 
@@ -451,8 +469,8 @@ func (of *RewardsExtraction) fetchHeightUnclaimedRewards(ctx context.Context, he
 		return nil, err
 	}
 
-	ack, err := of.dsClient.StoreRecord(ctx, &datastore.Payload{
-		Type:     of.datastorePrefix + "reward_records",
+	ack, err := re.dsClient.StoreRecord(ctx, &datastore.Payload{
+		Type:     re.cfg.DatastorePrefix + "reward_records",
 		Sequence: sequence,
 		Content:  rewardsEncoded,
 	})
@@ -467,11 +485,11 @@ func (of *RewardsExtraction) fetchHeightUnclaimedRewards(ctx context.Context, he
 	return newdelegs, err
 }
 
-func (of *RewardsExtraction) fetchTransactions(ctx context.Context, rp RewardProducer, startheight uint64, limit uint32) (claims map[string][]structs.ClaimedReward, accounts []DelegatorValidator, err error) {
-	of.logger.Debug("processing fetchTransactions", zap.Uint64("start_height", startheight))
+func (re *RewardsExtraction) fetchTransactions(ctx context.Context, rp RewardProducer, startheight uint64, limit uint32) (claims map[string][]structs.ClaimedReward, accounts []DelegatorValidator, err error) {
+	re.logger.Debug("processing fetchTransactions", zap.Uint64("start_height", startheight))
 	// Fetch Rewards from previous sequence
-	recordRewards, err := of.dsClient.FetchRecords(ctx, &datastore.DataRequest{
-		Type:     of.datastorePrefix + "tx_records",
+	recordRewards, err := re.dsClient.FetchRecords(ctx, &datastore.DataRequest{
+		Type:     re.cfg.DatastorePrefix + "tx_records",
 		Sequence: startheight,
 		Limit:    limit,
 	})
@@ -749,7 +767,7 @@ type DelegateResponse struct {
 
 var errorThreshold = 5
 
-func (of *OsmosisFlow) UnclaimedFetcher(ctx context.Context, height uint64, in <-chan string, out chan<- DelegateResponse) {
+func (re *RewardsExtraction) UnclaimedFetcher(ctx context.Context, height uint64, in <-chan string, out chan<- DelegateResponse) {
 	for address := range in {
 		select { // on error passthrough all the unread messages
 		case <-ctx.Done():
@@ -759,11 +777,11 @@ func (of *OsmosisFlow) UnclaimedFetcher(ctx context.Context, height uint64, in <
 		}
 
 		var consecutiveErrors int
-		del, err := of.client.GetDelegations(ctx, height, address)
+		del, err := re.client.GetDelegations(ctx, height, address)
 		if err != nil {
 		REPEATLOOP:
 			for {
-				del, err = of.client.GetDelegations(ctx, height, address)
+				del, err = re.client.GetDelegations(ctx, height, address)
 				if err == nil {
 					break REPEATLOOP
 				}
@@ -784,8 +802,8 @@ type AccountsHeight struct {
 	Accounts map[string]interface{}
 }
 
-func (of *RewardsExtraction) fetchInitialAccounts(ctx context.Context, height uint64) (accounts map[string]interface{}, err error) {
-	validators, err := of.client.GetHeightValidators(ctx, height, 0, of.orp.ValidatorFetchPage)
+func (re *RewardsExtraction) fetchInitialAccounts(ctx context.Context, height uint64) (accounts map[string]interface{}, err error) {
+	validators, err := re.client.GetHeightValidators(ctx, height, 0, re.cfg.ValidatorFetchPage)
 	if err != nil {
 		return nil, fmt.Errorf("Error getting validator lists %w", err)
 	}
@@ -793,7 +811,7 @@ func (of *RewardsExtraction) fetchInitialAccounts(ctx context.Context, height ui
 	accountsMap := make(map[string]interface{})
 	a := struct{}{}
 	for _, v := range validators {
-		deleg, err := of.client.GetDelegators(ctx, height, v.OperatorAddress, 0, of.orp.DelegatorFetchPage)
+		deleg, err := re.client.GetDelegators(ctx, height, v.OperatorAddress, 0, re.cfg.DelegatorFetchPage)
 		if err != nil {
 			//	if strings.Contains(err.Error(), "validator does not exist") { // we don't care on initial set it;s returned of unbonded
 			//		continue
@@ -813,7 +831,7 @@ func mapClaims(claims []structs.ClaimedReward) (rews []*rewstruct.SimpleReward, 
 		r := &rewstruct.SimpleReward{
 			Account:   c.Account,
 			Validator: c.Validator,
-			Height:    c.Height,
+			Height:    c.Mark,
 			Time:      &rewstruct.Timestamp{Seconds: int64(c.Time.Unix()), Nanos: int32(c.Time.Nanosecond())},
 		}
 		for _, a := range c.ClaimedReward {
