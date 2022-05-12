@@ -252,6 +252,8 @@ github.com/felixge/httpsnoop v1.0.1 h1:lvB5Jl89CsZtGIWuTcDM1E/vkVs49/Ml7JJe07l8S
 github.com/felixge/httpsnoop v1.0.1/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/figment-networks/indexing-engine v0.9.15-0.20220512121252-24ac5fee9b7a h1:OkaXiiJfXEjOHlHr84kY/w8FO7a1jAxu+pfFDAh9Oss=
 github.com/figment-networks/indexing-engine v0.9.15-0.20220512121252-24ac5fee9b7a/go.mod h1:DZ/VQPw7d0+zoYYbLJnqxbqrM3f8oenTuhKj9rUux0Y=
+github.com/figment-networks/ni-cosmoslib/client v0.0.0-20220512121631-36af4c5aa53b h1:wHV4b1/POQVYYbB700n+jt3TAukSn6RE/iCjDuEaPRM=
+github.com/figment-networks/ni-cosmoslib/client v0.0.0-20220512121631-36af4c5aa53b/go.mod h1:dEgaZTUJAsL+E5GzIU7NxNIkhu/MVGFPkT3JI0+PCSs=
 github.com/fjl/memsize v0.0.0-20180418122429-ca190fb6ffbc/go.mod h1:VvhXpOYNQvB+uIk2RvXzuaQtkQJzzIx6lSBe1xv7hi0=
 github.com/fortytw2/leaktest v1.3.0 h1:u8491cBMTQ8ft8aeV+adlcytMZylmA5nnwwkRZjI8vw=
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=

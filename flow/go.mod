@@ -5,7 +5,6 @@ go 1.18
 require (
 	github.com/cosmos/cosmos-sdk v0.44.3
 	github.com/figment-networks/indexing-engine v0.9.15-0.20220512121252-24ac5fee9b7a
-	github.com/figment-networks/ni-cosmoslib/client v0.0.0-00010101000000-000000000000
 	github.com/tendermint/tendermint v0.34.14
 	go.uber.org/zap v1.17.0
 	google.golang.org/protobuf v1.27.1
@@ -35,6 +34,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/dvsekhvalnov/jose2go v0.0.0-20200901110807-248326c1351b // indirect
 	github.com/enigmampc/btcutil v1.0.3-0.20200723161021-e2fb6adb2a25 // indirect
+	github.com/figment-networks/ni-cosmoslib/client v0.0.0-20220512121631-36af4c5aa53b // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/go-kit/kit v0.10.0 // indirect
 	github.com/go-logfmt/logfmt v0.5.0 // indirect
@@ -111,4 +111,3 @@ require (
 replace google.golang.org/grpc => google.golang.org/grpc v1.33.2
 
 replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-
