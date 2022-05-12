@@ -1,4 +1,4 @@
-package mapper
+package reward
 
 import (
 	"fmt"
@@ -14,6 +14,9 @@ import (
 	"github.com/figment-networks/ni-cosmoslib/figment/api/util"
 	"github.com/gogo/protobuf/proto"
 )
+
+type Mapper struct {
+}
 
 // delegate undelegate redelegate, -> addresses
 // delegate undelegate redelegate + withdraw delegator rewards -> delagator rewards
