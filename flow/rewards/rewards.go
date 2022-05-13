@@ -650,7 +650,6 @@ func calculateInternal(delegatorAddress string, previousdelegs *rewstruct.Valida
 				diff[va] = make(map[string]structs.TransactionAmount)
 			}
 			diff[va][currency] = structs.TransactionAmount{
-				Text:     fmt.Sprintf("%s%s", na.String(), newAmount.Currency),
 				Currency: newAmount.Currency,
 				Exp:      newAmount.Exp,
 				Numeric:  na,
@@ -675,17 +674,20 @@ func calculateInternal(delegatorAddress string, previousdelegs *rewstruct.Valida
 				// the amount is just the new amount.
 				continue
 			}
-			na := big.NewInt(0).SetBytes(newAmount.Numeric)
-			pa := big.NewInt(0).SetBytes(prevAmount.Numeric)
+			// use the cosmos decimal type to subtract here since
+			// delegator rewards are returned as a fractional
+			// amount in the base unit. Ie 5.1334 uatom
+			na := toDec(big.NewInt(0).SetBytes(newAmount.Numeric), newAmount.Exp)
+			pa := toDec(big.NewInt(0).SetBytes(prevAmount.Numeric), prevAmount.Exp)
 			if _, ok := diff[va]; !ok {
 				diff[va] = make(map[string]structs.TransactionAmount)
 			}
-			numeric := na.Sub(na, pa)
+			ra := na.Sub(pa).BigInt()
 			diff[va][currency] = structs.TransactionAmount{
-				Text:     fmt.Sprintf("%s%s", numeric.String(), newAmount.Currency),
 				Currency: newAmount.Currency,
-				Exp:      newAmount.Exp,
-				Numeric:  numeric,
+				// after using a dec for calculating the exp becomes -18
+				Exp:     -1 * types.Precision,
+				Numeric: ra,
 			}
 		}
 
@@ -701,12 +703,11 @@ func calculateInternal(delegatorAddress string, previousdelegs *rewstruct.Valida
 			if _, ok := diff[va]; !ok {
 				diff[va] = make(map[string]structs.TransactionAmount)
 			}
-			numeric := pa.Neg(pa)
+			ra := pa.Neg(pa)
 			diff[va][currency] = structs.TransactionAmount{
-				Text:     fmt.Sprintf("%s%s", numeric.String(), prevAmount.Currency),
 				Currency: prevAmount.Currency,
 				Exp:      prevAmount.Exp,
-				Numeric:  numeric,
+				Numeric:  ra,
 			}
 		}
 	}
@@ -723,12 +724,11 @@ func calculateInternal(delegatorAddress string, previousdelegs *rewstruct.Valida
 		}
 		for currency, prevAmount := range prevUncl.Amount {
 			pa := big.NewInt(0).SetBytes(prevAmount.Numeric)
-			numeric := pa.Neg(pa)
+			ra := pa.Neg(pa)
 			diff[va][currency] = structs.TransactionAmount{
-				Text:     fmt.Sprintf("%s%s", numeric.String(), prevAmount.Currency),
 				Currency: prevAmount.Currency,
 				Exp:      prevAmount.Exp,
-				Numeric:  numeric,
+				Numeric:  ra,
 			}
 		}
 	}
@@ -744,17 +744,21 @@ func calculateInternal(delegatorAddress string, previousdelegs *rewstruct.Valida
 			currency := r.Currency
 			amount, ok := diff[va][currency]
 			if !ok {
-				amount = structs.TransactionAmount{Numeric: new(big.Int), Currency: r.Currency, Exp: r.Exp, Text: r.Text}
+				amount = structs.TransactionAmount{
+					Numeric:  big.NewInt(0),
+					Currency: r.Currency,
+					Exp:      r.Exp,
+				}
 				diff[va][currency] = amount
 			}
-			na := amount.Numeric
-			ra := r.Numeric
-			numeric := na.Add(na, ra)
+			a := toDec(amount.Numeric, amount.Exp)
+			ra := toDec(r.Numeric, r.Exp)
+			fra := a.Add(ra).BigInt()
 			diff[va][currency] = structs.TransactionAmount{
-				Text:     fmt.Sprintf("%s%s", numeric.String(), amount.Currency),
 				Currency: amount.Currency,
-				Exp:      amount.Exp,
-				Numeric:  numeric,
+				// after using a dec for calculating the exp becomes -18
+				Exp:     -1 * types.Precision,
+				Numeric: fra,
 			}
 		}
 	}
@@ -764,7 +768,9 @@ func calculateInternal(delegatorAddress string, previousdelegs *rewstruct.Valida
 		earnedAmounts := []*rewstruct.Amount{}
 		for _, amount := range amounts {
 			earnedAmounts = append(earnedAmounts, &rewstruct.Amount{
-				Text:     amount.Text,
+				Text: fmt.Sprintf("%s%s", strings.TrimRight(
+					strings.TrimRight(toDec(amount.Numeric, amount.Exp).String(), "0"), "."),
+					amount.Currency),
 				Currency: amount.Currency,
 				Numeric:  amount.Numeric.Bytes(),
 				Exp:      amount.Exp,
@@ -778,6 +784,15 @@ func calculateInternal(delegatorAddress string, previousdelegs *rewstruct.Valida
 	}
 
 	return earnedRewards
+}
+
+func toDec(numeric *big.Int, exp int32) types.Dec {
+	if exp < 0 {
+		return types.NewDecFromBigIntWithPrec(numeric, int64(-1*exp))
+	}
+	powerTen := big.NewInt(10)
+	powerTen = powerTen.Exp(powerTen, big.NewInt(int64(exp)), nil)
+	return types.NewDecFromBigIntWithPrec(powerTen.Mul(numeric, powerTen), 0)
 }
 
 func populateAccounts(processing chan<- string, accounts map[string]interface{}) {
