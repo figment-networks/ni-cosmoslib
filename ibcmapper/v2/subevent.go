@@ -12,6 +12,8 @@ import (
 	api "github.com/figment-networks/ni-cosmoslib/api"
 )
 
+var invalidTypeErrFmt string = "Not a %s type: %w"
+
 // AddIBCSubEvent converts an ibc event from the log to a Subevent type and adds it to the provided TransactionEvent struct
 func AddIBCSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.ABCIMessageLog) (err error) {
 	var ev structs.SubsetEvent
@@ -52,6 +54,7 @@ func AddIBCSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.
 			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, api.ErrUnknownMessageType)
 		}
 	case "channel":
+		// types defined in https://github.com/cosmos/ibc-go/blob/9f70a070d773f8bfdb62d4205d8878f3149f351a/modules/core/04-channel/types/tx.pb.go#L896-L915
 		switch msgType {
 		case "MsgChannelOpenInit":
 			ev, err = IBCChannelOpenInitToSub(m.Value)
@@ -69,6 +72,8 @@ func AddIBCSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.
 			ev, err = IBCChannelRecvPacketToSub(m.Value)
 		case "MsgTimeout":
 			ev, err = IBCChannelTimeoutToSub(m.Value)
+		case "MsgTimeoutOnClose":
+			ev, err = IBCChannelTimeoutOnCloseToSub(m.Value)
 		case "MsgAcknowledgement":
 			ev, err = IBCChannelAcknowledgementToSub(m.Value)
 

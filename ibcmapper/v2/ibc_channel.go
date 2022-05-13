@@ -12,6 +12,13 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
+var (
+	// the constant is missing from https://github.com/cosmos/ibc-go/blob/main/modules/core/04-channel/types/events.go
+	// and tx.go is missing in https://github.com/cosmos/ibc-go/tree/main/modules/core/04-channel/types
+	// so manually use the name defined in tx.pb.go
+	constChannelTimeoutOnClose = "proof_close"
+)
+
 // IBCChannelOpenInitToSub transforms ibc.MsgChannelOpenInit sdk messages to SubsetEvent
 func IBCChannelOpenInitToSub(msg []byte) (se shared.SubsetEvent, err error) {
 	m := &channel.MsgChannelOpenInit{}
@@ -248,6 +255,49 @@ func IBCChannelTimeoutToSub(msg []byte) (se shared.SubsetEvent, err error) {
 			"packet_timeout_height_revision_height": {strconv.FormatUint(m.Packet.TimeoutHeight.RevisionHeight, 10)},
 			"packet_timeout_stamp":                  {strconv.FormatUint(m.Packet.TimeoutTimestamp, 10)},
 			"proof_unreceived":                      {proofUnreceived},
+			"proof_height_revision_number":          {strconv.FormatUint(m.ProofHeight.RevisionNumber, 10)},
+			"proof_height_revision_height":          {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
+			"next_sequence_recv":                    {strconv.FormatUint(m.NextSequenceRecv, 10)},
+		},
+	}, nil
+}
+
+// IBCChannelTimeoutOnCloseToSub transforms ibc.MsgTimeout sdk messages to SubsetEvent
+func IBCChannelTimeoutOnCloseToSub(msg []byte) (se shared.SubsetEvent, err error) {
+	m := &channel.MsgTimeoutOnClose{}
+	if err := proto.Unmarshal(msg, m); err != nil {
+		return se, fmt.Errorf(invalidTypeErrFmt, constChannelTimeoutOnClose, err)
+	}
+
+	// Encode fields that can contain null bytes.
+	proofUnreceived, err := util.EncodeToB64(m.ProofUnreceived, "proof_unreceived")
+	if err != nil {
+		return se, err
+	}
+
+	proofClose, err := util.EncodeToB64(m.ProofClose, "proof_close")
+	if err != nil {
+		return se, err
+	}
+
+	return shared.SubsetEvent{
+		Type:   []string{constChannelTimeoutOnClose},
+		Module: channel.SubModuleName,
+		Node: map[string][]structs.Account{
+			"signer": {{ID: m.Signer}},
+		},
+		Additional: map[string][]string{
+			"packet_sequence":                       {strconv.FormatUint(m.Packet.Sequence, 10)},
+			"packet_source_port":                    {m.Packet.SourcePort},
+			"packet_source_channel":                 {m.Packet.SourceChannel},
+			"packet_destination_port":               {m.Packet.DestinationPort},
+			"packet_destination_channel":            {m.Packet.DestinationChannel},
+			"packet_data":                           {string(m.Packet.Data)},
+			"packet_timeout_height_revision_number": {strconv.FormatUint(m.Packet.TimeoutHeight.RevisionNumber, 10)},
+			"packet_timeout_height_revision_height": {strconv.FormatUint(m.Packet.TimeoutHeight.RevisionHeight, 10)},
+			"packet_timeout_stamp":                  {strconv.FormatUint(m.Packet.TimeoutTimestamp, 10)},
+			"proof_unreceived":                      {proofUnreceived},
+			"proof_close":                           {proofClose},
 			"proof_height_revision_number":          {strconv.FormatUint(m.ProofHeight.RevisionNumber, 10)},
 			"proof_height_revision_height":          {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
 			"next_sequence_recv":                    {strconv.FormatUint(m.NextSequenceRecv, 10)},
