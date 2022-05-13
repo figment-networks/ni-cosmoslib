@@ -282,7 +282,7 @@ func IBCChannelTimeoutOnCloseToSub(msg []byte) (se shared.SubsetEvent, err error
 
 	return shared.SubsetEvent{
 		Type:   []string{constChannelTimeoutOnClose},
-		Module: channel.SubModuleName,
+		Module: "ibc",
 		Node: map[string][]structs.Account{
 			"signer": {{ID: m.Signer}},
 		},
