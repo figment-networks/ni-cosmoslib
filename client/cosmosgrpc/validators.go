@@ -8,13 +8,17 @@ import (
 
 	"google.golang.org/grpc/metadata"
 
+	"github.com/cosmos/cosmos-sdk/types"
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	distributionTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
-const errorThreshold = 5
+const (
+	errorThreshold = 5
+	CosmosDecExp   = -1 * types.Precision
+)
 
 func (c *Client) GetHeightValidators(ctx context.Context, height, limit, page uint64) (vals []Validator, err error) {
 	var (
@@ -76,6 +80,7 @@ func (c *Client) GetHeightValidators(ctx context.Context, height, limit, page ui
 					TransactionAmount{
 						Text:     rew.Amount.String(),
 						Numeric:  rew.Amount.BigInt(), // probably wrong
+						Exp:      CosmosDecExp,
 						Currency: rew.Denom,
 					})
 			}
@@ -125,6 +130,7 @@ func (c *Client) GetDelegators(ctx context.Context, height uint64, operatorAddre
 				}, Balance: TransactionAmount{
 					Text:     dr.Balance.Amount.String(),
 					Numeric:  dr.Balance.Amount.BigInt(),
+					Exp:      CosmosDecExp,
 					Currency: dr.Balance.Denom,
 				}},
 			)
@@ -169,6 +175,7 @@ func (c *Client) GetDelegatorDelegations(ctx context.Context, height uint64, del
 				}, Balance: TransactionAmount{
 					Text:     dr.Balance.Amount.String(),
 					Numeric:  dr.Balance.Amount.BigInt(),
+					Exp:      CosmosDecExp,
 					Currency: dr.Balance.Denom,
 				}},
 			)
@@ -198,6 +205,7 @@ func (c *Client) GetDelegations(ctx context.Context, height uint64, delegatorAdd
 			unc = append(unc, TransactionAmount{
 				Text:     c.Amount.String(),
 				Numeric:  c.Amount.BigInt(),
+				Exp:      CosmosDecExp,
 				Currency: c.Denom,
 			})
 		}
