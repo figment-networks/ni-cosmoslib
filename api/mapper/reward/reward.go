@@ -9,7 +9,6 @@ import (
 	distribution "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/figment-networks/indexing-engine/proto/rewstruct"
-	"github.com/figment-networks/indexing-engine/worker/logger"
 	"github.com/figment-networks/ni-cosmoslib/figment/api/util"
 	"github.com/gogo/protobuf/proto"
 	"go.uber.org/zap"
@@ -59,8 +58,7 @@ func ParseRewardEvent(module, msgType string, raw []byte, lg types.ABCIMessageLo
 func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by string) (rev *rewstruct.Tx, err error) {
 	rev = &rewstruct.Tx{}
 	if len(lg.GetEvents()) > 5 {
-		err = fmt.Errorf("unexpected events length: %s", lg.GetEvents())
-		logger.Error(err) // It would be good to test that kind of event
+		m.Logger.Warn("unexpected events length", zap.Any("events", lg.GetEvents())) // It would be good to test that kind of event
 	}
 
 	for _, ev := range lg.GetEvents() {
@@ -69,8 +67,7 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 			return rev, err
 		}
 		if len(parsed) > 1 {
-			err = fmt.Errorf("multiple %s events", ev.GetType())
-			logger.Error(err) // is that possible?
+			m.Logger.Warn("multiple event", zap.String("type", ev.GetType())) // is that possible?
 		}
 
 		switch ev.GetType() {
@@ -131,7 +128,15 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 			// }
 		case "delegate":
 			// MsgDelegate
-			continue
+			if amount_by == "delegate" {
+				for _, p := range parsed {
+					am, err := fAmounts(strings.Split(p["amount"], ","))
+					if err != nil {
+						return rev, err
+					}
+					rev.Amounts = append(rev.Amounts, am...)
+				}
+			}
 			// counted already in coin_received
 			// for _, p := range parsed {
 			// 	fAmounts("amount", strings.Split(p["amount"], ","), rev)
@@ -149,11 +154,16 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 			}
 		case "unbond":
 			// MsgUndelegate
-
-			continue
 			// for _, p := range parsed {
-			// 	fAmounts("amount", strings.Split(p["amount"], ","), rev)
+			// 	if amount_by == "unbond" { // TODO do not need it here ;)
+			// 		am, err := fAmounts(strings.Split(p["amount"], ","))
+			// 		if err != nil {
+			// 			return rev, err
+			// 		}
+			// 		rev.Amounts = append(rev.Amounts, am...)
+			// 	}
 			// }
+			continue
 		default:
 			// err = fmt.Errorf("unsupported event: %s", ev.GetType())
 			// logger.Error(err)
@@ -225,7 +235,7 @@ func (m *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruc
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev, err = m.grouper(lg, wvc.DelegatorAddress, "coin_received")
+	rev, err = m.grouper(lg, wvc.DelegatorAddress, "delegate")
 	if err != nil {
 		return rev, err
 	}
@@ -354,41 +364,64 @@ func fAmounts(amounts []string) (am []*rewstruct.Amount, err error) {
 	return am, nil
 }
 
-func (m *Mapper) groupEvents(ev types.StringEvent) (result []map[string]string, err error) {
+var rewardEvents = map[string][]string{
+	"coin_received":       {"receiver", "amount"},
+	"coin_spent":          {"spender"},
+	"delegate":            {"amount"},
+	"redelegate":          {"amount"},
+	"withdraw_commission": {"amount"},
+}
+
+func (m *Mapper) eventsFilter(ev types.StringEvent) (result []types.Attribute, err error) {
+
 	attr := ev.GetAttributes()
 	etype := ev.GetType()
-	// elm - events length map
-	elm := map[string]int{
-		"coin_received":       2,         // multiple events
-		"coin_spent":          2,         // multiple events
-		"message":             len(attr), // 3 or 4 keys :/
-		"transfer":            3,
-		"withdraw_commission": 1, // MsgWithdrawValidatorCommission
-		"withdraw_rewards":    2, // MsgWithdrawDelegatorReward
-		"redelegate":          4, // MsgBeginRedelegate
-		"delegate":            3, // MsgDelegate
-		"unbond":              3, // MsgUndelegate
-	}
-
-	elen, exists := elm[etype]
+	elen, exists := rewardEvents[etype]
 	if !exists {
-		return result, fmt.Errorf("missing in events length map: %s", etype)
+		// skip if no exists
+		return result, nil
 	}
 
-	for i := 0; i < len(attr); i = i + elen {
-		emap := make(map[string]string)
-		for j := 0; j < elen; j++ {
-			if len(attr) <= i+j {
-				return result, fmt.Errorf("parse error")
+	for _, v := range attr {
+		for _, k := range elen {
+			if k == v.Key {
+				localAttr := v
+				result = append(result, localAttr)
+				m.Logger.Debug("event", zap.String("type", etype), zap.Any("content", v))
 			}
-			emap[attr[i+j].Key] = attr[i+j].Value
-			m.Logger.Debug("event", zap.String("type", etype), zap.String("Key", attr[i+j].Key), zap.String("Value", attr[i+j].Value))
+			continue
 		}
-		if len(emap) < elen {
-			// logs ->0 ->events ->type message
-			// https://www.mintscan.io/cosmos/txs/0BA41D804ED0195CAD8D65BDFA80202F6C0267CBDBCBD3E71CC3BB78DE40BACC
-			m.Logger.Info("duplicated keys in event list", zap.String("type", etype), zap.Any("attr", attr))
+	}
+
+	return result, nil
+
+}
+
+func (m *Mapper) groupEvents(ev types.StringEvent) (result []map[string]string, err error) {
+	events, err := m.eventsFilter(ev)
+	// end if there was no events
+	if err != nil && len(events) == 0 {
+		return result, err
+	}
+	etype := ev.GetType()
+	elen, exists := rewardEvents[etype]
+	if !exists {
+		return result, nil
+	}
+
+	eventLen := len(elen)
+	for i := 0; i < len(events); i = i + eventLen {
+		emap := make(map[string]string)
+
+		for j := 0; j < eventLen; j++ {
+			if i+j <= len(events) {
+				a := events[i+j]
+				emap[a.Key] = a.Value
+			} else {
+				m.Logger.Error("rewardEvents missconfigured")
+			}
 		}
+
 		result = append(result, emap)
 	}
 
