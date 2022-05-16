@@ -309,11 +309,9 @@ func (m *Mapper) MsgSetWithdrawAddress(msg []byte, lg types.ABCIMessageLog) (rev
 
 	rev = &rewstruct.Tx{}
 	rev.Type = "MsgSetWithdrawAddress"
+	rev.Delegator = wvc.DelegatorAddress
 
-	// rev, err = grouper(lg, "xxx")
-	// if err != nil {
-	// 	return rev, err
-	// }
+	// TODO categorize  withdraw address 	wvc.WithdrawAddress
 
 	return rev, nil
 }
