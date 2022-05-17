@@ -232,6 +232,20 @@ func (re *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 		if accountData.Error != ErrNoRows.Error() {
 			return fmt.Errorf("Error getting heights: %s", accountData.Error)
 		}
+
+		accountDataInitial, err := re.dsClient.FetchRecord(ctx, &datastore.FetchRecordRequest{
+			Type:     re.cfg.DatastorePrefix + "account_records",
+			Sequence: sequence,
+		})
+		if err != nil {
+			return err
+		}
+
+		if accountDataInitial.Error != ErrNoRows.Error() {
+			re.logger.Warn("Fetched Initial accounts for: ", zap.Uint64("height", height), zap.Uint64("sequence", sequence))
+			return nil
+		}
+
 		re.logger.Warn("Fetching Initial accounts for: ", zap.Uint64("height", height))
 		acc, err := re.fetchInitialAccounts(ctx, height)
 		if err != nil {
