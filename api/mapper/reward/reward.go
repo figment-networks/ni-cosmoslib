@@ -18,6 +18,111 @@ type Mapper struct {
 	Logger *zap.Logger
 }
 
+type amounts struct {
+	rewards map[string]*rewstruct.Amount
+	amounts map[string]*rewstruct.Amount
+}
+
+func newAmounts() *amounts {
+	return &amounts{
+		rewards: make(map[string]*rewstruct.Amount),
+		amounts: make(map[string]*rewstruct.Amount),
+	}
+}
+
+func (a *amounts) group(m map[string]*rewstruct.Amount, amts []*rewstruct.Amount) {
+	for _, amt := range amts {
+		key := fmt.Sprintf("%s:%d", amt.Currency, amt.Exp)
+		amtStruct, ok := m[key]
+		if !ok {
+			// copy amount
+			cpamt := *amt
+			amtStruct = &cpamt
+			m[key] = amtStruct
+		} else {
+			combinedAmt := new(big.Int).Add(new(big.Int).SetBytes(amtStruct.Numeric), new(big.Int).SetBytes(amt.Numeric))
+			amtStruct.Numeric = combinedAmt.Bytes()
+			amtStruct.Text = fmt.Sprintf("%s%s", combinedAmt, amtStruct.Currency)
+		}
+	}
+}
+
+func (a *amounts) addAmounts(amts []*rewstruct.Amount) {
+	a.group(a.amounts, amts)
+}
+
+func (a *amounts) addRewards(amts []*rewstruct.Amount) {
+	a.group(a.rewards, amts)
+}
+
+func toAmmounts(m map[string]*rewstruct.Amount) (res []*rewstruct.Amount) {
+	for _, v := range m {
+		res = append(res, v)
+	}
+	return res
+}
+
+func (a *amounts) toRewards() (res []*rewstruct.Amount) {
+	return toAmmounts(a.rewards)
+}
+
+func (a *amounts) toAmounts() (res []*rewstruct.Amount) {
+	return toAmmounts(a.amounts)
+}
+
+type receipient struct {
+	rcpts map[string]*amounts
+}
+
+func newRecipient() *receipient {
+	return &receipient{rcpts: make(map[string]*amounts)}
+}
+
+func (r *receipient) populate(t *rewstruct.Tx) {
+	for rcpt, amts := range r.rcpts {
+		t.Recipient = append(t.Recipient, rcpt)
+		t.Rewards = amts.toRewards()
+		t.Amounts = amts.toAmounts()
+	}
+}
+
+func (r *receipient) newRecipientToAmounts(recipient string) *amounts {
+	amts, ok := r.rcpts[recipient]
+	if !ok {
+		amts = newAmounts()
+		r.rcpts[recipient] = amts
+	}
+	return amts
+}
+
+func (r *receipient) addReward(recipient string, amt []*rewstruct.Amount) {
+	amts := r.newRecipientToAmounts(recipient)
+	amts.addRewards(amt)
+}
+
+func (r *receipient) addAmount(recipient string, amt []*rewstruct.Amount) {
+	amts := r.newRecipientToAmounts(recipient)
+	amts.addAmounts(amt)
+}
+
+type spender struct {
+	senders map[string]struct{}
+}
+
+func newSpenders() *spender {
+	return &spender{senders: make(map[string]struct{})}
+}
+
+func (s *spender) populate(rev *rewstruct.Tx) {
+	for k := range s.senders {
+		rev.Sender = append(rev.Sender, k)
+	}
+}
+
+func (s *spender) addSender(sender string) {
+	s.senders[sender] = struct{}{}
+}
+
 // delegate undelegate redelegate, -> addresses
 // delegate undelegate redelegate + withdraw delegator rewards -> delagator rewards
 // withdraw validator commision -> validator rewards
@@ -57,6 +162,10 @@ func ParseRewardEvent(module, msgType string, raw []byte, lg types.ABCIMessageLo
 
 func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by string) (rev *rewstruct.Tx, err error) {
 	rev = &rewstruct.Tx{}
+
+	recipients := newRecipient()
+	spenders := newSpenders()
+
 	if len(lg.GetEvents()) > 5 {
 		m.Logger.Warn("unexpected events length", zap.Any("events", lg.GetEvents())) // It would be good to test that kind of event
 	}
@@ -72,42 +181,38 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 
 		switch ev.GetType() {
 		case "coin_received":
-
 			if amount_by == "coin_received" {
 				for _, p := range parsed {
-					rev.Recipient = append(rev.Recipient, p["receiver"])
-
 					switch p["receiver"] {
 					case delegator:
 						am, err := fAmounts(strings.Split(p["amount"], ","))
 						if err != nil {
 							return rev, err
 						}
-						rev.Rewards = append(rev.Rewards, am...)
+						recipients.addReward(p["receiver"], am)
 					default:
 						am, err := fAmounts(strings.Split(p["amount"], ","))
 						if err != nil {
 							return rev, err
 						}
-						rev.Amounts = append(rev.Amounts, am...)
+						recipients.addAmount(p["receiver"], am)
 					}
 				}
 			} else if amount_by == "redelegate" {
 				for _, p := range parsed {
-					rev.Recipient = append(rev.Recipient, p["receiver"])
 					if p["receiver"] == delegator {
 						am, err := fAmounts(strings.Split(p["amount"], ","))
 						if err != nil {
 							return rev, err
 						}
-						rev.Rewards = append(rev.Rewards, am...)
+						recipients.addReward(p["receiver"], am)
 					}
 				}
 			}
 
 		case "coin_spent":
 			for _, p := range parsed {
-				rev.Sender = append(rev.Sender, p["spender"])
+				spenders.addSender(p["spender"])
 			}
 		case "withdraw_commission":
 			// MsgWithdrawValidatorCommission
@@ -171,6 +276,8 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 			continue
 		}
 	}
+	recipients.populate(rev)
+	spenders.populate(rev)
 	return rev, err
 }
 
