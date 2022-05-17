@@ -70,15 +70,15 @@ func (a *amounts) toAmounts() (res []*rewstruct.Amount) {
 	return toAmmounts(a.amounts)
 }
 
-type receipient struct {
+type recipient struct {
 	rcpts map[string]*amounts
 }
 
-func newRecipient() *receipient {
-	return &receipient{rcpts: make(map[string]*amounts)}
+func newRecipient() *recipient {
+	return &recipient{rcpts: make(map[string]*amounts)}
 }
 
-func (r *receipient) populate(t *rewstruct.Tx) {
+func (r *recipient) populate(t *rewstruct.Tx) {
 	for rcpt, amts := range r.rcpts {
 		t.Recipient = append(t.Recipient, rcpt)
 		t.Rewards = amts.toRewards()
@@ -86,7 +86,7 @@ func (r *receipient) populate(t *rewstruct.Tx) {
 	}
 }
 
-func (r *receipient) newRecipientToAmounts(recipient string) *amounts {
+func (r *recipient) newRecipientToAmounts(recipient string) *amounts {
 	amts, ok := r.rcpts[recipient]
 	if !ok {
 		amts = newAmounts()
@@ -95,12 +95,12 @@ func (r *receipient) newRecipientToAmounts(recipient string) *amounts {
 	return amts
 }
 
-func (r *receipient) addReward(recipient string, amt []*rewstruct.Amount) {
+func (r *recipient) addReward(recipient string, amt []*rewstruct.Amount) {
 	amts := r.newRecipientToAmounts(recipient)
 	amts.addRewards(amt)
 }
 
-func (r *receipient) addAmount(recipient string, amt []*rewstruct.Amount) {
+func (r *recipient) addAmount(recipient string, amt []*rewstruct.Amount) {
 	amts := r.newRecipientToAmounts(recipient)
 	amts.addAmounts(amt)
 }
