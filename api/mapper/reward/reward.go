@@ -30,7 +30,7 @@ func newAmounts() *amounts {
 	}
 }
 
-func (a *amounts) group(m map[string]*rewstruct.Amount, amts []*rewstruct.Amount) {
+func mergeAmounts(m map[string]*rewstruct.Amount, amts []*rewstruct.Amount) {
 	for _, amt := range amts {
 		key := fmt.Sprintf("%s:%d", amt.Currency, amt.Exp)
 		amtStruct, ok := m[key]
@@ -48,11 +48,11 @@ func (a *amounts) group(m map[string]*rewstruct.Amount, amts []*rewstruct.Amount
 }
 
 func (a *amounts) addAmounts(amts []*rewstruct.Amount) {
-	a.group(a.amounts, amts)
+	mergeAmounts(a.amounts, amts)
 }
 
 func (a *amounts) addRewards(amts []*rewstruct.Amount) {
-	a.group(a.rewards, amts)
+	mergeAmounts(a.rewards, amts)
 }
 
 func toAmmounts(m map[string]*rewstruct.Amount) (res []*rewstruct.Amount) {
