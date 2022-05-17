@@ -303,6 +303,9 @@ github.com/fatih/color v1.12.0/go.mod h1:ELkj/draVOlAH/xkhN6mQ50Qd0MPOk5AAr3maGE
 github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYFFOfk=
 github.com/felixge/httpsnoop v1.0.1 h1:lvB5Jl89CsZtGIWuTcDM1E/vkVs49/Ml7JJe07l8SPQ=
 github.com/felixge/httpsnoop v1.0.1/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
+github.com/figment-networks/indexing-engine v0.5.0/go.mod h1:c8uqoruz/wIqh+obBG2QYRm2XLv01AdyoYXPz05yCS0=
+github.com/figment-networks/indexing-engine v0.9.15 h1:k+CHbovik9mHJTCvP+eo/T/hWUlf5nux2ZV/DBfshfk=
+github.com/figment-networks/indexing-engine v0.9.15/go.mod h1:DZ/VQPw7d0+zoYYbLJnqxbqrM3f8oenTuhKj9rUux0Y=
 github.com/figment-networks/ni-cosmoslib v0.0.6 h1:Z6f9MP5GBD+NV6HkgzX4MUvoNkjodJHZsg77m3cGAJI=
 github.com/figment-networks/ni-cosmoslib v0.0.6/go.mod h1:/EzjtASHibf/po2Ezz0EgqXV4pgE9Y6qP9iNq5RBoJU=
 github.com/fjl/memsize v0.0.0-20180418122429-ca190fb6ffbc/go.mod h1:VvhXpOYNQvB+uIk2RvXzuaQtkQJzzIx6lSBe1xv7hi0=
