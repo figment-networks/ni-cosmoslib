@@ -97,6 +97,21 @@ func TestMapper_MsgBeginRedelegate_Osmosis(t *testing.T) {
 			},
 			wantRev: &rewstruct.Tx{Type: "MsgBeginRedelegate", Sender: []string{"osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, Recipient: []string{"osmo1faqfuwg5cfev205swpr53ewfjqzxn6e2e8u60f"}, Delegator: "osmo1faqfuwg5cfev205swpr53ewfjqzxn6e2e8u60f", ValidatorSrc: "osmovaloper1clpqr4nrk4khgkxj78fcwwh6dl3uw4ep88n0y4", ValidatorDst: "osmovaloper1t8qckan2yrygq7kl9apwhzfalwzgc2429p8f0s", Amounts: []*rewstruct.Amount{{Text: "30000000uosmo", Currency: "uosmo", Numeric: []byte("\x01\xc9À")}}, Rewards: []*rewstruct.Amount{{Text: "1059808uosmo", Currency: "uosmo", Numeric: []byte("\x10+\xe0")}}},
 		},
+		{
+			name: "MsgBeginRedelegate_from_height_3932419",
+			args: args{
+				msg: []byte("\n+osmo1m3esxfpc2qlk75jyjhfgyhma3std4cmvuwhrwt\x122osmovaloper12rzd5qr2wmpseypvkjl0spusts0eruw2g35lkn\x1a2osmovaloper1ej2es5fjztqjcd4pwa0zyvaevtjd2y5w37wr9t\"\x0f\n\x05uosmo\x12\x06954871"),
+				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
+					{Type: "coin_received", Attributes: []types.Attribute{{Key: "receiver", Value: "osmo1m3esxfpc2qlk75jyjhfgyhma3std4cmvuwhrwt"}, {Key: "amount", Value: "3111uosmo"}, {Key: "receiver", Value: "osmo1m3esxfpc2qlk75jyjhfgyhma3std4cmvuwhrwt"}, {Key: "amount", Value: "3910uosmo"}}},
+					{Type: "coin_spent", Attributes: []types.Attribute{{Key: "spender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "amount", Value: "3111uosmo"}, {Key: "spender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "amount", Value: "3910uosmo"}}},
+					{Type: "message", Attributes: []types.Attribute{{Key: "action", Value: "/cosmos.staking.v1beta1.MsgBeginRedelegate"}, {Key: "sender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "sender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "module", Value: "staking"}, {Key: "sender", Value: "osmo1m3esxfpc2qlk75jyjhfgyhma3std4cmvuwhrwt"}}},
+					{Type: "redelegate", Attributes: []types.Attribute{{Key: "source_validator", Value: "osmovaloper12rzd5qr2wmpseypvkjl0spusts0eruw2g35lkn"}, {Key: "destination_validator", Value: "osmovaloper1ej2es5fjztqjcd4pwa0zyvaevtjd2y5w37wr9t"}, {Key: "amount", Value: "954871uosmo"}, {Key: "completion_time", Value: "2022-04-23T15:12:24Z"}}},
+					{Type: "transfer", Attributes: []types.Attribute{{Key: "recipient", Value: "osmo1m3esxfpc2qlk75jyjhfgyhma3std4cmvuwhrwt"}, {Key: "sender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "amount", Value: "3111uosmo"}, {Key: "recipient", Value: "osmo1m3esxfpc2qlk75jyjhfgyhma3std4cmvuwhrwt"}, {Key: "sender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "amount", Value: "3910uosmo"}}},
+				},
+				},
+			},
+			wantRev: &rewstruct.Tx{Type: "MsgBeginRedelegate", Sender: []string{"osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, Recipient: []string{"osmo1m3esxfpc2qlk75jyjhfgyhma3std4cmvuwhrwt"}, Delegator: "osmo1m3esxfpc2qlk75jyjhfgyhma3std4cmvuwhrwt", ValidatorSrc: "osmovaloper12rzd5qr2wmpseypvkjl0spusts0eruw2g35lkn", ValidatorDst: "osmovaloper1ej2es5fjztqjcd4pwa0zyvaevtjd2y5w37wr9t", Amounts: []*rewstruct.Amount{{Text: "954871uosmo", Currency: "uosmo", Numeric: []byte("\x0e\x91\xf7")}}, Rewards: []*rewstruct.Amount{{Text: "7021uosmo", Currency: "uosmo", Numeric: []byte("\x1bm")}}},
+		},
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
