@@ -118,6 +118,10 @@ func NewRewardsExtraction(logger *zap.Logger, cfg RewardsExtractionConfig, clien
 	}
 }
 
+func (re *RewardsExtraction) Cfg() RewardsExtractionConfig {
+	return re.cfg
+}
+
 func (re *RewardsExtraction) FetchHeights(ctx context.Context, startHeight, endHeight, sequence uint64) (h structs.Heights, crossingHeights []structs.Crossing, err error) {
 	const fetchTxWorkersNumber = 24
 
