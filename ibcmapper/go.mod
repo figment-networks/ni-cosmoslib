@@ -9,8 +9,8 @@ replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alp
 require (
 	github.com/cosmos/cosmos-sdk v0.45.1
 	github.com/cosmos/ibc-go v1.4.0
-	github.com/figment-networks/indexing-engine v0.9.13
-	github.com/figment-networks/ni-cosmoslib/api v0.0.6
+	github.com/figment-networks/indexing-engine v0.9.15-0.20220518205918-5e6273fb76d3
+	github.com/figment-networks/ni-cosmoslib/api v0.1.2
 	github.com/gogo/protobuf v1.3.3
 )
 
@@ -100,7 +100,7 @@ require (
 	go.etcd.io/bbolt v1.3.5 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/net v0.0.0-20210903162142-ad29c8ab022f // indirect
-	golang.org/x/sys v0.0.0-20210903071746-97244b99971b // indirect
+	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
 	golang.org/x/text v0.3.6 // indirect
 	google.golang.org/genproto v0.0.0-20210828152312-66f60bf46e71 // indirect
