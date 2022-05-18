@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/types"
@@ -82,12 +83,13 @@ func newRecipient() *recipient {
 	return &recipient{rcpts: make(map[string]*amounts)}
 }
 
-func (r *recipient) populate(t *rewstruct.Tx) {
+func (r *recipient) populate(rev *rewstruct.Tx) {
 	for rcpt, amts := range r.rcpts {
-		t.Recipient = append(t.Recipient, rcpt)
-		t.Rewards = amts.toRewards()
-		t.Amounts = amts.toAmounts()
+		rev.Recipient = append(rev.Recipient, rcpt)
+		rev.Rewards = append(rev.Rewards, amts.toRewards()...)
+		rev.Amounts = append(rev.Amounts, amts.toAmounts()...)
 	}
+	sort.Strings(rev.Recipient)
 }
 
 func (r *recipient) newRecipientToAmounts(recipient string) *amounts {
@@ -121,6 +123,7 @@ func (s *spender) populate(rev *rewstruct.Tx) {
 	for k := range s.senders {
 		rev.Sender = append(rev.Sender, k)
 	}
+	sort.Strings(rev.Sender)
 }
 
 func (s *spender) addSender(sender string) {

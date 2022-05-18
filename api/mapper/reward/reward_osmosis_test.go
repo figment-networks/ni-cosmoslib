@@ -2,6 +2,7 @@ package reward
 
 import (
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/types"
@@ -61,6 +62,8 @@ func TestMapper_MsgDelegate_Osmosis(t *testing.T) {
 				t.Errorf("Mapper.MsgDelegate() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			sort.Strings(tt.wantRev.Sender)
+			sort.Strings(tt.wantRev.Recipient)
 			if !reflect.DeepEqual(gotRev, tt.wantRev) {
 				t.Errorf("Mapper.MsgDelegate() = %v, want %v", gotRev, tt.wantRev)
 			}
@@ -107,6 +110,8 @@ func TestMapper_MsgBeginRedelegate_Osmosis(t *testing.T) {
 				t.Errorf("Mapper.MsgBeginRedelegate() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			sort.Strings(tt.wantRev.Sender)
+			sort.Strings(tt.wantRev.Recipient)
 			if !reflect.DeepEqual(gotRev, tt.wantRev) {
 				t.Errorf("Mapper.MsgBeginRedelegate() = %v, want %v", gotRev, tt.wantRev)
 			}
@@ -153,6 +158,8 @@ func TestMapper_MsgWithdrawDelegatorReward_Osmosis(t *testing.T) {
 				t.Errorf("Mapper.MsgWithdrawDelegatorReward() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			sort.Strings(tt.wantRev.Sender)
+			sort.Strings(tt.wantRev.Recipient)
 			if !reflect.DeepEqual(gotRev, tt.wantRev) {
 				t.Errorf("Mapper.MsgWithdrawDelegatorReward() = %v, want %v", gotRev, tt.wantRev)
 			}
@@ -197,6 +204,8 @@ func TestMapper_MsgUndelegate_Osmosis(t *testing.T) {
 				t.Errorf("Mapper.MsgUndelegate() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			sort.Strings(tt.wantRev.Sender)
+			sort.Strings(tt.wantRev.Recipient)
 			if !reflect.DeepEqual(gotRev, tt.wantRev) {
 				t.Errorf("Mapper.MsgUndelegate() = %v, want %v", gotRev, tt.wantRev)
 			}
