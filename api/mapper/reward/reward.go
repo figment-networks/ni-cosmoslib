@@ -342,6 +342,7 @@ func fAmounts(defaultCurrency string, amounts []string) (am []*rewstruct.Amount,
 
 	for _, amt := range amounts {
 		attrAmt := &rewstruct.Amount{}
+		// We add a default currency mainly for old heights where there was only one value (see osmosis test for height 36). Whereas now you can have multiple currencies there.
 		if currencyRegexp.MatchString(amt) {
 			amt = amt + defaultCurrency
 		}
