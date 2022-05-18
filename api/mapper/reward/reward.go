@@ -20,6 +20,8 @@ type Mapper struct {
 	DefaultCurrency string
 }
 
+var currencyRegexp = regexp.MustCompile(`^\d+$`)
+
 // delegate undelegate redelegate, -> addresses
 // delegate undelegate redelegate + withdraw delegator rewards -> delagator rewards
 // withdraw validator commision -> validator rewards
@@ -337,11 +339,10 @@ func (m *Mapper) MsgFundCommunityPool(msg []byte, lg types.ABCIMessageLog) (rev 
 }
 
 func fAmounts(defaultCurrency string, amounts []string) (am []*rewstruct.Amount, err error) {
-	r, _ := regexp.Compile(`^\d+$`)
 
 	for _, amt := range amounts {
 		attrAmt := &rewstruct.Amount{}
-		if r.MatchString(amt) {
+		if currencyRegexp.MatchString(amt) {
 			amt = amt + defaultCurrency
 		}
 
