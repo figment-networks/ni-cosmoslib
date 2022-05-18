@@ -54,7 +54,7 @@ func TestMapper_MsgDelegate_Osmosis(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Mapper{
 				Logger:          zaptest.NewLogger(t),
-				defaultCurrency: "uosmo",
+				DefaultCurrency: "uosmo",
 			}
 			gotRev, err := m.MsgDelegate(tt.args.msg, tt.args.lg)
 			if (err != nil) != tt.wantErr {
@@ -100,7 +100,7 @@ func TestMapper_MsgBeginRedelegate_Osmosis(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Mapper{
 				Logger:          zaptest.NewLogger(t),
-				defaultCurrency: "uosmo",
+				DefaultCurrency: "uosmo",
 			}
 			gotRev, err := m.MsgBeginRedelegate(tt.args.msg, tt.args.lg)
 			if (err != nil) != tt.wantErr {
@@ -146,7 +146,7 @@ func TestMapper_MsgWithdrawDelegatorReward_Osmosis(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Mapper{
 				Logger:          zaptest.NewLogger(t),
-				defaultCurrency: "uosmo",
+				DefaultCurrency: "uosmo",
 			}
 			gotRev, err := m.MsgWithdrawDelegatorReward(tt.args.msg, tt.args.lg)
 			if (err != nil) != tt.wantErr {
@@ -190,7 +190,7 @@ func TestMapper_MsgUndelegate_Osmosis(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Mapper{
 				Logger:          zaptest.NewLogger(t),
-				defaultCurrency: "uosmo",
+				DefaultCurrency: "uosmo",
 			}
 			gotRev, err := m.MsgUndelegate(tt.args.msg, tt.args.lg)
 			if (err != nil) != tt.wantErr {
