@@ -3,6 +3,7 @@ package reward
 import (
 	"fmt"
 	"math/big"
+	"regexp"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/types"
@@ -15,8 +16,11 @@ import (
 )
 
 type Mapper struct {
-	Logger *zap.Logger
+	Logger          *zap.Logger
+	DefaultCurrency string
 }
+
+var currencyRegexp = regexp.MustCompile(`^\d+$`)
 
 // delegate undelegate redelegate, -> addresses
 // delegate undelegate redelegate + withdraw delegator rewards -> delagator rewards
@@ -79,13 +83,13 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 
 					switch p["receiver"] {
 					case delegator:
-						am, err := fAmounts(strings.Split(p["amount"], ","))
+						am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
 						if err != nil {
 							return rev, err
 						}
 						rev.Rewards = append(rev.Rewards, am...)
 					default:
-						am, err := fAmounts(strings.Split(p["amount"], ","))
+						am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
 						if err != nil {
 							return rev, err
 						}
@@ -96,7 +100,7 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 				for _, p := range parsed {
 					rev.Recipient = append(rev.Recipient, p["receiver"])
 					if p["receiver"] == delegator {
-						am, err := fAmounts(strings.Split(p["amount"], ","))
+						am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
 						if err != nil {
 							return rev, err
 						}
@@ -113,7 +117,7 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 			// MsgWithdrawValidatorCommission
 			if amount_by == "withdraw_commission" {
 				for _, p := range parsed {
-					am, err := fAmounts(strings.Split(p["amount"], ","))
+					am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
 					if err != nil {
 						return rev, err
 					}
@@ -130,7 +134,7 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 			// MsgDelegate
 			if amount_by == "delegate" {
 				for _, p := range parsed {
-					am, err := fAmounts(strings.Split(p["amount"], ","))
+					am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
 					if err != nil {
 						return rev, err
 					}
@@ -145,7 +149,7 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 			// MsgBeginRedelegate
 			for _, p := range parsed {
 				if amount_by == "redelegate" { // TODO do not need it here ;)
-					am, err := fAmounts(strings.Split(p["amount"], ","))
+					am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
 					if err != nil {
 						return rev, err
 					}
@@ -156,7 +160,7 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 			// MsgUndelegate
 			// for _, p := range parsed {
 			// 	if amount_by == "unbond" { // TODO do not need it here ;)
-			// 		am, err := fAmounts(strings.Split(p["amount"], ","))
+			// 		am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
 			// 		if err != nil {
 			// 			return rev, err
 			// 		}
@@ -309,11 +313,9 @@ func (m *Mapper) MsgSetWithdrawAddress(msg []byte, lg types.ABCIMessageLog) (rev
 
 	rev = &rewstruct.Tx{}
 	rev.Type = "MsgSetWithdrawAddress"
+	rev.Delegator = wvc.DelegatorAddress
 
-	// rev, err = grouper(lg, "xxx")
-	// if err != nil {
-	// 	return rev, err
-	// }
+	// TODO categorize  withdraw address 	wvc.WithdrawAddress
 
 	return rev, nil
 }
@@ -336,9 +338,15 @@ func (m *Mapper) MsgFundCommunityPool(msg []byte, lg types.ABCIMessageLog) (rev 
 	return rev, nil
 }
 
-func fAmounts(amounts []string) (am []*rewstruct.Amount, err error) {
+func fAmounts(defaultCurrency string, amounts []string) (am []*rewstruct.Amount, err error) {
+
 	for _, amt := range amounts {
 		attrAmt := &rewstruct.Amount{}
+		// We add a default currency mainly for old heights where there was only one value (see osmosis test for height 36). Whereas now you can have multiple currencies there.
+		if currencyRegexp.MatchString(amt) {
+			amt = amt + defaultCurrency
+		}
+
 		sliced := util.GetCurrency(amt)
 		var (
 			c       *big.Int
