@@ -337,8 +337,6 @@ func (m *Mapper) MsgFundCommunityPool(msg []byte, lg types.ABCIMessageLog) (rev 
 }
 
 func (m *Mapper) fAmounts(amounts []string) (am []*rewstruct.Amount, err error) {
-	//	reCurrency := regexp.MustCompile(`^reference\s+([\d\.]+)\s+([\d\.]+)\s*$`)
-
 	r, _ := regexp.Compile(`^\d+$`)
 
 	for _, amt := range amounts {
