@@ -90,6 +90,12 @@ type Client interface {
 	GetDelegations(ctx context.Context, height uint64, delegatorAddress string) (dels []cosmosgrpc.Delegators, err error)
 }
 
+type RewardsExtractor interface {
+	FetchHeights(ctx context.Context, startHeight, endHeight, sequence uint64) (h structs.Heights, crossingHeights []structs.Crossing, err error)
+	CalculateRewards(ctx context.Context, height, sequence uint64) error
+	Cfg() RewardsExtractionConfig
+}
+
 type RewardsExtractionConfig struct {
 	ValidatorFetchPage uint64
 	DelegatorFetchPage uint64
