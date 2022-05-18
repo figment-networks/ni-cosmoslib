@@ -46,7 +46,8 @@ func TestMapper_MsgDelegate_Cosmos(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Mapper{
-				Logger: zaptest.NewLogger(t),
+				Logger:          zaptest.NewLogger(t),
+				defaultCurrency: "uatom",
 			}
 			gotRev, err := m.MsgDelegate(tt.args.msg, tt.args.lg)
 			if (err != nil) != tt.wantErr {
@@ -91,7 +92,8 @@ func TestMapper_MsgBeginRedelegate_Cosmos(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Mapper{
-				Logger: zaptest.NewLogger(t),
+				Logger:          zaptest.NewLogger(t),
+				defaultCurrency: "uatom",
 			}
 			gotRev, err := m.MsgBeginRedelegate(tt.args.msg, tt.args.lg)
 			if (err != nil) != tt.wantErr {
@@ -133,7 +135,8 @@ func TestMapper_MsgWithdrawDelegatorReward_Cosmos(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Mapper{
-				Logger: zaptest.NewLogger(t),
+				Logger:          zaptest.NewLogger(t),
+				defaultCurrency: "uatom",
 			}
 			gotRev, err := m.MsgWithdrawDelegatorReward(tt.args.msg, tt.args.lg)
 			if (err != nil) != tt.wantErr {
@@ -175,7 +178,8 @@ func TestMapper_MsgSetWithdrawAddress_Cosmos(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Mapper{
-				Logger: zaptest.NewLogger(t),
+				Logger:          zaptest.NewLogger(t),
+				defaultCurrency: "uatom",
 			}
 			gotRev, err := m.MsgSetWithdrawAddress(tt.args.msg, tt.args.lg)
 			if (err != nil) != tt.wantErr {
@@ -220,7 +224,8 @@ func TestMapper_MsgUndelegate_Cosmos(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Mapper{
-				Logger: zaptest.NewLogger(t),
+				Logger:          zaptest.NewLogger(t),
+				defaultCurrency: "uatom",
 			}
 			gotRev, err := m.MsgUndelegate(tt.args.msg, tt.args.lg)
 			if (err != nil) != tt.wantErr {
@@ -265,7 +270,8 @@ func TestMapper_MsgWithdrawValidatorCommission_Cosmos(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Mapper{
-				Logger: zaptest.NewLogger(t),
+				Logger:          zaptest.NewLogger(t),
+				defaultCurrency: "uatom",
 			}
 			gotRev, err := m.MsgWithdrawValidatorCommission(tt.args.msg, tt.args.lg)
 			if (err != nil) != tt.wantErr {

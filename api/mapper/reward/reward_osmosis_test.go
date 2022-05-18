@@ -46,14 +46,15 @@ func TestMapper_MsgDelegate_Osmosis(t *testing.T) {
 				},
 			},
 			// TODO  amount issues / missing accounts
-			wantRev: &rewstruct.Tx{Type: "MsgDelegate", ValidatorDst: "osmovaloper1de7qx00pz2j6gn9k88ntxxylelkazfk3llxw6r", Delegator: "osmo1de7qx00pz2j6gn9k88ntxxylelkazfk39gwddy", Amounts: []*rewstruct.Amount{{Text: "500000000", Currency: "0", Numeric: []byte("\x02\xfa\xf0\x80")}}},
+			wantRev: &rewstruct.Tx{Type: "MsgDelegate", ValidatorDst: "osmovaloper1de7qx00pz2j6gn9k88ntxxylelkazfk3llxw6r", Delegator: "osmo1de7qx00pz2j6gn9k88ntxxylelkazfk39gwddy", Amounts: []*rewstruct.Amount{{Text: "500000000uosmo", Currency: "uosmo", Numeric: []byte("\x1d\xcde\x00")}}},
 		},
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Mapper{
-				Logger: zaptest.NewLogger(t),
+				Logger:          zaptest.NewLogger(t),
+				defaultCurrency: "uosmo",
 			}
 			gotRev, err := m.MsgDelegate(tt.args.msg, tt.args.lg)
 			if (err != nil) != tt.wantErr {
@@ -98,7 +99,8 @@ func TestMapper_MsgBeginRedelegate_Osmosis(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Mapper{
-				Logger: zaptest.NewLogger(t),
+				Logger:          zaptest.NewLogger(t),
+				defaultCurrency: "uosmo",
 			}
 			gotRev, err := m.MsgBeginRedelegate(tt.args.msg, tt.args.lg)
 			if (err != nil) != tt.wantErr {
@@ -143,7 +145,8 @@ func TestMapper_MsgWithdrawDelegatorReward_Osmosis(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Mapper{
-				Logger: zaptest.NewLogger(t),
+				Logger:          zaptest.NewLogger(t),
+				defaultCurrency: "uosmo",
 			}
 			gotRev, err := m.MsgWithdrawDelegatorReward(tt.args.msg, tt.args.lg)
 			if (err != nil) != tt.wantErr {
@@ -186,7 +189,8 @@ func TestMapper_MsgUndelegate_Osmosis(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Mapper{
-				Logger: zaptest.NewLogger(t),
+				Logger:          zaptest.NewLogger(t),
+				defaultCurrency: "uosmo",
 			}
 			gotRev, err := m.MsgUndelegate(tt.args.msg, tt.args.lg)
 			if (err != nil) != tt.wantErr {

@@ -3,6 +3,7 @@ package reward
 import (
 	"fmt"
 	"math/big"
+	"regexp"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/types"
@@ -15,7 +16,8 @@ import (
 )
 
 type Mapper struct {
-	Logger *zap.Logger
+	Logger          *zap.Logger
+	defaultCurrency string
 }
 
 // delegate undelegate redelegate, -> addresses
@@ -79,13 +81,13 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 
 					switch p["receiver"] {
 					case delegator:
-						am, err := fAmounts(strings.Split(p["amount"], ","))
+						am, err := m.fAmounts(strings.Split(p["amount"], ","))
 						if err != nil {
 							return rev, err
 						}
 						rev.Rewards = append(rev.Rewards, am...)
 					default:
-						am, err := fAmounts(strings.Split(p["amount"], ","))
+						am, err := m.fAmounts(strings.Split(p["amount"], ","))
 						if err != nil {
 							return rev, err
 						}
@@ -96,7 +98,7 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 				for _, p := range parsed {
 					rev.Recipient = append(rev.Recipient, p["receiver"])
 					if p["receiver"] == delegator {
-						am, err := fAmounts(strings.Split(p["amount"], ","))
+						am, err := m.fAmounts(strings.Split(p["amount"], ","))
 						if err != nil {
 							return rev, err
 						}
@@ -113,7 +115,7 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 			// MsgWithdrawValidatorCommission
 			if amount_by == "withdraw_commission" {
 				for _, p := range parsed {
-					am, err := fAmounts(strings.Split(p["amount"], ","))
+					am, err := m.fAmounts(strings.Split(p["amount"], ","))
 					if err != nil {
 						return rev, err
 					}
@@ -130,7 +132,7 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 			// MsgDelegate
 			if amount_by == "delegate" {
 				for _, p := range parsed {
-					am, err := fAmounts(strings.Split(p["amount"], ","))
+					am, err := m.fAmounts(strings.Split(p["amount"], ","))
 					if err != nil {
 						return rev, err
 					}
@@ -145,7 +147,7 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 			// MsgBeginRedelegate
 			for _, p := range parsed {
 				if amount_by == "redelegate" { // TODO do not need it here ;)
-					am, err := fAmounts(strings.Split(p["amount"], ","))
+					am, err := m.fAmounts(strings.Split(p["amount"], ","))
 					if err != nil {
 						return rev, err
 					}
@@ -156,7 +158,7 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 			// MsgUndelegate
 			// for _, p := range parsed {
 			// 	if amount_by == "unbond" { // TODO do not need it here ;)
-			// 		am, err := fAmounts(strings.Split(p["amount"], ","))
+			// 		am, err := m.fAmounts(strings.Split(p["amount"], ","))
 			// 		if err != nil {
 			// 			return rev, err
 			// 		}
@@ -334,9 +336,17 @@ func (m *Mapper) MsgFundCommunityPool(msg []byte, lg types.ABCIMessageLog) (rev 
 	return rev, nil
 }
 
-func fAmounts(amounts []string) (am []*rewstruct.Amount, err error) {
+func (m *Mapper) fAmounts(amounts []string) (am []*rewstruct.Amount, err error) {
+	//	reCurrency := regexp.MustCompile(`^reference\s+([\d\.]+)\s+([\d\.]+)\s*$`)
+
+	r, _ := regexp.Compile(`^\d+$`)
+
 	for _, amt := range amounts {
 		attrAmt := &rewstruct.Amount{}
+		if r.MatchString(amt) {
+			amt = amt + m.defaultCurrency
+		}
+
 		sliced := util.GetCurrency(amt)
 		var (
 			c       *big.Int
