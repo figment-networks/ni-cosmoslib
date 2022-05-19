@@ -27,6 +27,7 @@ var currencyRegexp = regexp.MustCompile(`^\d+$`)
 // delegate undelegate redelegate + withdraw delegator rewards -> delagator rewards
 // withdraw validator commision -> validator rewards
 
+// ValidatorFromTx maps the resolved `ValidatorSrc` and `ValidatorDst` from processing `ParseRewardEvent` into a common function
 func ValidatorFromTx(tx *rewstruct.Tx) string {
 	var validator string
 	switch tx.Type {
