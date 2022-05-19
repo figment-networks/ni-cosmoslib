@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/cosmos/cosmos-sdk v0.45.4
-	github.com/figment-networks/indexing-engine v0.9.15-0.20220519161543-278d094e2bee
+	github.com/figment-networks/indexing-engine v0.9.17
 	github.com/gogo/protobuf v1.3.3
 	github.com/gravity-devs/liquidity v1.4.2
 	go.uber.org/zap v1.19.1
