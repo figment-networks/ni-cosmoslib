@@ -100,7 +100,7 @@ type RewardsExtractionConfig struct {
 
 type RewardsExtraction struct {
 	logger *zap.Logger
-	cfg    RewardsExtractionConfig
+	Cfg    RewardsExtractionConfig
 
 	client   Client
 	dsClient pb.DatastoreServiceClient
@@ -114,7 +114,7 @@ func NewRewardsExtraction(logger *zap.Logger, cfg RewardsExtractionConfig, clien
 		dsClient: dsClient,
 		orp:      orp,
 		logger:   logger,
-		cfg:      cfg,
+		Cfg:      cfg,
 	}
 }
 
@@ -222,7 +222,7 @@ FETCH_HEIGHTS_LOOP:
 func (re *RewardsExtraction) CalculateRewards(ctx context.Context, height, sequence uint64) error {
 	// previous full hour accounts
 	accountData, err := re.dsClient.FetchRecord(ctx, &datastore.FetchRecordRequest{
-		Type:     re.cfg.DatastorePrefix + "account_records",
+		Type:     re.Cfg.DatastorePrefix + "account_records",
 		Sequence: sequence - 1,
 	})
 	if err != nil {
@@ -234,7 +234,7 @@ func (re *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 		}
 
 		accountDataInitial, err := re.dsClient.FetchRecord(ctx, &datastore.FetchRecordRequest{
-			Type:     re.cfg.DatastorePrefix + "account_records",
+			Type:     re.Cfg.DatastorePrefix + "account_records",
 			Sequence: sequence,
 		})
 		if err != nil {
@@ -256,7 +256,7 @@ func (re *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 			return err
 		}
 		ack, err := re.dsClient.StoreRecord(ctx, &datastore.Payload{
-			Type:     re.cfg.DatastorePrefix + "account_records",
+			Type:     re.Cfg.DatastorePrefix + "account_records",
 			Sequence: sequence,
 			Content:  b,
 		})
@@ -278,7 +278,7 @@ func (re *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 
 	// Fetch Rewards from previous sequence
 	rewardsRaw, err := re.dsClient.FetchRecord(ctx, &datastore.FetchRecordRequest{
-		Type:     re.cfg.DatastorePrefix + "reward_records",
+		Type:     re.Cfg.DatastorePrefix + "reward_records",
 		Sequence: sequence - 1,
 	})
 	if err != nil {
@@ -323,7 +323,7 @@ func (re *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 	}
 
 	ack, err := re.dsClient.StoreRecord(ctx, &datastore.Payload{
-		Type:     re.cfg.DatastorePrefix + "account_records",
+		Type:     re.Cfg.DatastorePrefix + "account_records",
 		Sequence: sequence,
 		Content:  newAccounts,
 	})
@@ -340,8 +340,8 @@ func (re *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 	}
 
 	finalEarned := &rewstruct.Rewards{
-		ChainId:  re.cfg.ChainID,
-		Network:  re.cfg.Network,
+		ChainId:  re.Cfg.ChainID,
+		Network:  re.Cfg.Network,
 		Sequence: sequence,
 		Time:     &rewstruct.Timestamp{Seconds: int64(sequence * 60 * 60)},
 		Height:   height,
@@ -365,7 +365,7 @@ func (re *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 	}
 
 	ack, err = re.dsClient.StoreRecord(ctx, &datastore.Payload{
-		Type:     re.cfg.DatastorePrefix + "earned_reward_records",
+		Type:     re.Cfg.DatastorePrefix + "earned_reward_records",
 		Sequence: sequence,
 		Content:  finalRewards,
 	})
@@ -435,7 +435,7 @@ func (re *RewardsExtraction) fetchHeightData(ctx context.Context, heights chan H
 
 			// every height - even empty one has to be written
 			err = txStream.Send(&datastore.Payload{
-				Type:     re.cfg.DatastorePrefix + "tx_records",
+				Type:     re.Cfg.DatastorePrefix + "tx_records",
 				Sequence: height.Height,
 				Content:  txr,
 			})
@@ -507,7 +507,7 @@ func (re *RewardsExtraction) fetchHeightUnclaimedRewards(ctx context.Context, he
 	}
 
 	ack, err := re.dsClient.StoreRecord(ctx, &datastore.Payload{
-		Type:     re.cfg.DatastorePrefix + "reward_records",
+		Type:     re.Cfg.DatastorePrefix + "reward_records",
 		Sequence: sequence,
 		Content:  rewardsEncoded,
 	})
@@ -526,7 +526,7 @@ func (re *RewardsExtraction) fetchTransactions(ctx context.Context, rp RewardPro
 	re.logger.Debug("processing fetchTransactions", zap.Uint64("start_height", startheight))
 	// Fetch Rewards from previous sequence
 	recordRewards, err := re.dsClient.FetchRecords(ctx, &datastore.DataRequest{
-		Type:     re.cfg.DatastorePrefix + "tx_records",
+		Type:     re.Cfg.DatastorePrefix + "tx_records",
 		Sequence: startheight,
 		Limit:    limit,
 	})
@@ -859,7 +859,7 @@ type AccountsHeight struct {
 }
 
 func (re *RewardsExtraction) fetchInitialAccounts(ctx context.Context, height uint64) (accounts map[string]interface{}, err error) {
-	validators, err := re.client.GetHeightValidators(ctx, height, 0, re.cfg.ValidatorFetchPage)
+	validators, err := re.client.GetHeightValidators(ctx, height, 0, re.Cfg.ValidatorFetchPage)
 	if err != nil {
 		return nil, fmt.Errorf("Error getting validator lists %w", err)
 	}
@@ -867,7 +867,7 @@ func (re *RewardsExtraction) fetchInitialAccounts(ctx context.Context, height ui
 	accountsMap := make(map[string]interface{})
 	a := struct{}{}
 	for _, v := range validators {
-		deleg, err := re.client.GetDelegators(ctx, height, v.OperatorAddress, 0, re.cfg.DelegatorFetchPage)
+		deleg, err := re.client.GetDelegators(ctx, height, v.OperatorAddress, 0, re.Cfg.DelegatorFetchPage)
 		if err != nil {
 			// GetHeightValidators can produce Delegators not at this height
 			// this is ok b/c we are just trying to fetch an initial list at this height.

@@ -10,9 +10,10 @@ import (
 	distribution "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/figment-networks/indexing-engine/proto/rewstruct"
-	"github.com/figment-networks/ni-cosmoslib/figment/api/util"
 	"github.com/gogo/protobuf/proto"
 	"go.uber.org/zap"
+
+	"github.com/figment-networks/ni-cosmoslib/api/util"
 )
 
 type Mapper struct {
@@ -25,6 +26,22 @@ var currencyRegexp = regexp.MustCompile(`^\d+$`)
 // delegate undelegate redelegate, -> addresses
 // delegate undelegate redelegate + withdraw delegator rewards -> delagator rewards
 // withdraw validator commision -> validator rewards
+
+// ValidatorFromTx maps the resolved `ValidatorSrc` and `ValidatorDst` from processing `ParseRewardEvent` into a common function
+func ValidatorFromTx(tx *rewstruct.Tx) string {
+	var validator string
+	switch tx.Type {
+	case "MsgWithdrawDelegatorReward":
+		validator = tx.ValidatorSrc
+	case "MsgUndelegate":
+		validator = tx.ValidatorSrc
+	case "MsgDelegate":
+		validator = tx.ValidatorDst
+	case "MsgBeginRedelegate":
+		validator = tx.ValidatorSrc
+	}
+	return validator
+}
 
 // ParseRewardEvent converts a cosmos event from the log to a Subevent type and adds it to the provided RewardEvent struct
 func ParseRewardEvent(module, msgType string, raw []byte, lg types.ABCIMessageLog, ma *Mapper) (rev *rewstruct.Tx, err error) {
