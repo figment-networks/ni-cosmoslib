@@ -45,6 +45,7 @@ type Crossing struct {
 func (c *Crossing) GetHeight() uint64 {
 	return c.Height
 }
+
 func (c *Crossing) GetSequence() uint64 {
 	return c.Sequence
 }
@@ -197,7 +198,6 @@ FETCH_HEIGHTS_LOOP:
 			if counter == sent {
 				break
 			}
-
 		}
 	}
 	close(resp)
@@ -298,6 +298,9 @@ func (re *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 	}
 
 	delegatorClaims, delegationDiff, err := re.fetchTransactions(ctx, re.orp, previousdelegs.Height+1, uint32(height-previousdelegs.Height))
+	if err != nil {
+		return err
+	}
 	newAccounts := accountData.Content
 	if len(delegationDiff) > 0 {
 		for _, dv := range delegationDiff {
@@ -331,7 +334,7 @@ func (re *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 		return err
 	}
 	if ack.Error != "" {
-		return fmt.Errorf("Error storinf account_records: %s", ack.Error)
+		return fmt.Errorf("Error storing account_records: %s", ack.Error)
 	}
 
 	newdelegs, err := re.fetchHeightUnclaimedRewards(ctx, height, sequence, ah.Accounts)
@@ -349,14 +352,7 @@ func (re *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 	}
 	finalEarned.Earned = calculate(previousdelegs, newdelegs, delegatorClaims)
 	for _, dc := range delegatorClaims {
-		r, err := mapClaims(dc)
-		if err != nil {
-			return err
-		}
-		if r != nil {
-			finalEarned.Claimed = append(finalEarned.Claimed, r...)
-		}
-
+		finalEarned.Claimed = append(finalEarned.Claimed, mapClaims(dc)...)
 	}
 
 	finalRewards, err := proto.Marshal(finalEarned)
@@ -378,7 +374,6 @@ func (re *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 	}
 
 	return nil
-
 }
 
 func (re *RewardsExtraction) fetchHeightData(ctx context.Context, heights chan HeightTime, resp chan HeightError, txStream datastore.DatastoreService_StoreRecordsClient) {
@@ -443,13 +438,11 @@ func (re *RewardsExtraction) fetchHeightData(ctx context.Context, heights chan H
 				r.Error = fmt.Errorf("error storing transaction  (%d): %w ", height.Height, err)
 			}
 			resp <- r
-
 		}
 	}
 }
 
 func (re *RewardsExtraction) fetchHeightUnclaimedRewards(ctx context.Context, height, sequence uint64, accounts map[string]interface{}) (newdelegs *rewstruct.Delegators, err error) {
-
 	processing := make(chan string, 100)
 	outp := make(chan DelegateResponse, 100)
 	defer close(outp)
@@ -542,6 +535,8 @@ func (re *RewardsExtraction) fetchTransactions(ctx context.Context, rp RewardPro
 		drp, err = recordRewards.Recv()
 		if err != nil {
 			if err == io.EOF {
+				// clear out EOF before returning.  so the caller doesn't consider this an error.
+				err = nil
 				break
 			}
 			return nil, nil, fmt.Errorf("Error receiving repordReward data: %w", err)
@@ -554,7 +549,6 @@ func (re *RewardsExtraction) fetchTransactions(ctx context.Context, rp RewardPro
 		if drp.Sequence > 0 && drp.Content == nil {
 			// this means record it present but it's empty so we don't process it
 			continue
-
 		}
 		txs := &rewstruct.Txs{}
 		if err = proto.Unmarshal(drp.Content, txs); err != nil {
@@ -571,9 +565,7 @@ func (re *RewardsExtraction) fetchTransactions(ctx context.Context, rp RewardPro
 				claims[reward.Account] = a
 			}
 
-			for _, del := range rp.GetDelegations(tx) {
-				accounts = append(accounts, del)
-			}
+			accounts = append(accounts, rp.GetDelegations(tx)...)
 		}
 	}
 	// last request has to be current height, otherwise we cannot use it
@@ -585,7 +577,6 @@ func (re *RewardsExtraction) fetchTransactions(ctx context.Context, rp RewardPro
 }
 
 func addRewards(newdelegs *rewstruct.Delegators, delegation DelegateResponse) {
-
 	for _, del := range delegation.Dels {
 		valUncl, ok := newdelegs.Delegators[del.DelegatorAddress]
 		if !ok {
@@ -626,9 +617,7 @@ func calculate(previousdelegs *rewstruct.Delegators, newdelegs *rewstruct.Delega
 	claimedDelegators := make(map[string]struct{})
 	for d := range newdelegs.Delegators {
 		earned := calculateInternal(d, previousdelegs.Delegators[d], newdelegs.Delegators[d], claims[d])
-		for _, reward := range earned {
-			earnedRewards = append(earnedRewards, reward)
-		}
+		earnedRewards = append(earnedRewards, earned...)
 		claimedDelegators[d] = struct{}{}
 	}
 	for d := range claims {
@@ -637,9 +626,7 @@ func calculate(previousdelegs *rewstruct.Delegators, newdelegs *rewstruct.Delega
 		}
 		xnewdel := &rewstruct.ValidatorsUnclaimed{}
 		earned := calculateInternal(d, previousdelegs.Delegators[d], xnewdel, claims[d])
-		for _, reward := range earned {
-			earnedRewards = append(earnedRewards, reward)
-		}
+		earnedRewards = append(earnedRewards, earned...)
 	}
 
 	return earnedRewards
@@ -668,7 +655,6 @@ func calculateInternal(delegatorAddress string, previousdelegs *rewstruct.Valida
 				Exp:      newAmount.Exp,
 				Numeric:  na,
 			}
-
 		}
 	}
 
@@ -883,14 +869,13 @@ func (re *RewardsExtraction) fetchInitialAccounts(ctx context.Context, height ui
 	return accountsMap, nil
 }
 
-func mapClaims(claims []structs.ClaimedReward) (rews []*rewstruct.SimpleReward, err error) {
-
+func mapClaims(claims []structs.ClaimedReward) (rews []*rewstruct.SimpleReward) {
 	for _, c := range claims {
 		r := &rewstruct.SimpleReward{
 			Account:   c.Account,
 			Validator: c.Validator,
 			Height:    c.Mark,
-			Time:      &rewstruct.Timestamp{Seconds: int64(c.Time.Unix()), Nanos: int32(c.Time.Nanosecond())},
+			Time:      &rewstruct.Timestamp{Seconds: c.Time.Unix(), Nanos: int32(c.Time.Nanosecond())},
 		}
 		for _, a := range c.ClaimedReward {
 			r.Amounts = append(r.Amounts, &rewstruct.Amount{
@@ -903,5 +888,5 @@ func mapClaims(claims []structs.ClaimedReward) (rews []*rewstruct.SimpleReward, 
 
 		rews = append(rews, r)
 	}
-	return rews, nil
+	return rews
 }
