@@ -120,7 +120,7 @@ func NewRewardsExtraction(logger *zap.Logger, cfg RewardsExtractionConfig, clien
 }
 
 func (re *RewardsExtraction) FetchHeights(ctx context.Context, startHeight, endHeight, sequence uint64) (h structs.Heights, crossingHeights []structs.Crossing, err error) {
-	const fetchTxWorkersNumber = 24
+	const fetchTxWorkersNumber = 80
 
 	txStream, err := re.dsClient.StoreRecords(ctx)
 	if err != nil {
@@ -128,7 +128,7 @@ func (re *RewardsExtraction) FetchHeights(ctx context.Context, startHeight, endH
 	}
 
 	heights := make(chan HeightTime, fetchTxWorkersNumber)
-	resp := make(chan HeightError, fetchTxWorkersNumber+1)
+	resp := make(chan HeightError, fetchTxWorkersNumber*2)
 	for i := 0; i < fetchTxWorkersNumber; i++ {
 		go re.fetchHeightData(ctx, heights, resp, txStream)
 	}
@@ -443,12 +443,12 @@ func (re *RewardsExtraction) fetchHeightData(ctx context.Context, heights chan H
 }
 
 func (re *RewardsExtraction) fetchHeightUnclaimedRewards(ctx context.Context, height, sequence uint64, accounts map[string]interface{}) (newdelegs *rewstruct.Delegators, err error) {
-	processing := make(chan string, 100)
-	outp := make(chan DelegateResponse, 100)
+	processing := make(chan string, 1000)
+	outp := make(chan DelegateResponse, 400)
 	defer close(outp)
 
 	nctx, cancel := context.WithCancel(ctx)
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 200; i++ {
 		go re.UnclaimedFetcher(nctx, height, processing, outp)
 	}
 	// populate all the accounts regardless of the error,
@@ -466,10 +466,15 @@ func (re *RewardsExtraction) fetchHeightUnclaimedRewards(ctx context.Context, he
 		counter int
 		dErr    error
 	)
+
+	var dresp []DelegateResponse
 	for delegation := range outp {
 		counter++
 		if delegation.Err != nil {
-			dErr = delegation.Err
+			re.logger.Debug("Rewards error: ", zap.Any("response", delegation))
+			if dErr == nil {
+				dErr = delegation.Err
+			}
 			cancel()
 			if counter == len(accounts) {
 				break
@@ -477,7 +482,8 @@ func (re *RewardsExtraction) fetchHeightUnclaimedRewards(ctx context.Context, he
 			continue
 		}
 
-		addRewards(newdelegs, delegation)
+		dresp = append(dresp, delegation)
+		// addRewards(newdelegs, delegation)
 
 		if counter%100 == 0 {
 			re.logger.Debug("Rewards for: ", zap.Int("rewards", counter))
@@ -488,6 +494,10 @@ func (re *RewardsExtraction) fetchHeightUnclaimedRewards(ctx context.Context, he
 		}
 	}
 	cancel()
+
+	for _, d := range dresp {
+		addRewards(newdelegs, d)
+	}
 
 	if dErr != nil {
 		re.logger.Error("Delegation error", zap.Error(dErr))
