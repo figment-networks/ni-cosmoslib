@@ -44,7 +44,7 @@ func ValidatorFromTx(tx *rewstruct.Tx) string {
 }
 
 // ParseRewardEvent converts a cosmos event from the log to a Subevent type and adds it to the provided RewardEvent struct
-func ParseRewardEvent(module, msgType string, raw []byte, lg types.ABCIMessageLog, ma *Mapper) (rev *rewstruct.Tx, err error) {
+func ParseRewardEvent(module, msgType string, raw []byte, lg types.ABCIMessageLog, ma *Mapper) (rev *rewstruct.RewardTx, err error) {
 
 	switch module {
 	case "distribution":
@@ -76,8 +76,9 @@ func ParseRewardEvent(module, msgType string, raw []byte, lg types.ABCIMessageLo
 	return
 }
 
-func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by string) (rev *rewstruct.Tx, err error) {
-	rev = &rewstruct.Tx{}
+/*
+func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by string) (rev *rewstruct.RewardTx, err error) {
+	rev = &rewstruct.RewardTx{}
 	if len(lg.GetEvents()) > 5 {
 		m.Logger.Warn("unexpected events length", zap.Any("events", lg.GetEvents())) // It would be good to test that kind of event
 	}
@@ -87,9 +88,9 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 		if err != nil {
 			return rev, err
 		}
-		if len(parsed) > 1 {
-			m.Logger.Warn("multiple event", zap.String("type", ev.GetType())) // is that possible?
-		}
+		// if len(parsed) > 1 {
+		// 	m.Logger.Warn("multiple event", zap.String("type", ev.GetType())) // is that possible?
+		// }
 
 		switch ev.GetType() {
 		case "coin_received":
@@ -124,6 +125,15 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 						rev.Rewards = append(rev.Rewards, am...)
 					}
 				}
+			} else if amount_by == "withdraw_rewards" {
+				for _, p := range parsed {
+					rev.Recipient = append(rev.Recipient, p["receiver"])
+					am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
+					if err != nil {
+						return rev, err
+					}
+					rev.Rewards = append(rev.Rewards, am...)
+				}
 			}
 
 		case "coin_spent":
@@ -138,15 +148,12 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 					if err != nil {
 						return rev, err
 					}
-					rev.Amounts = append(rev.Amounts, am...)
+					rev.Rewards = append(rev.Rewards, am...)
 				}
 			}
 		case "withdraw_rewards":
 			// MsgWithdrawDelegatorReward
 			continue
-			// for _, p := range parsed {
-			// 	fAmounts("reward", strings.Split(p["amount"], ","), rev)
-			// }
 		case "delegate":
 			// MsgDelegate
 			if amount_by == "delegate" {
@@ -158,14 +165,10 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 					rev.Amounts = append(rev.Amounts, am...)
 				}
 			}
-			// counted already in coin_received
-			// for _, p := range parsed {
-			// 	fAmounts("amount", strings.Split(p["amount"], ","), rev)
-			// }
 		case "redelegate":
 			// MsgBeginRedelegate
 			for _, p := range parsed {
-				if amount_by == "redelegate" { // TODO do not need it here ;)
+				if amount_by == "redelegate" {
 					am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
 					if err != nil {
 						return rev, err
@@ -175,15 +178,6 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 			}
 		case "unbond":
 			// MsgUndelegate
-			// for _, p := range parsed {
-			// 	if amount_by == "unbond" { // TODO do not need it here ;)
-			// 		am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
-			// 		if err != nil {
-			// 			return rev, err
-			// 		}
-			// 		rev.Amounts = append(rev.Amounts, am...)
-			// 	}
-			// }
 			continue
 		default:
 			// err = fmt.Errorf("unsupported event: %s", ev.GetType())
@@ -194,31 +188,51 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 	}
 	return rev, err
 }
+*/
 
-func (m *Mapper) MsgWithdrawValidatorCommission(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+func (m *Mapper) MsgWithdrawValidatorCommission(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.RewardTx, err error) {
 	//func (mapper *Mapper) MsgWithdrawValidatorCommission(msg []byte, lg types.ABCIMessageLog, rev *structs.RewardEvent) (err error) {
 	wvc := &distribution.MsgWithdrawValidatorCommission{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev, err = m.grouper(lg, "", "withdraw_commission")
-	if err != nil {
-		return rev, err
+	rev = &rewstruct.RewardTx{
+		Type:         "MsgWithdrawValidatorCommission",
+		ValidatorDst: wvc.ValidatorAddress,
 	}
-	rev.Type = "MsgWithdrawValidatorCommission"
-	rev.ValidatorDst = wvc.ValidatorAddress
+
+	for _, ev := range lg.GetEvents() {
+		if ev.GetType() == "withdraw_commission" {
+			parsed, err := m.groupEvents(ev)
+			if err != nil {
+				return rev, err
+			}
+			if val, ok := parsed[0]["amount"]; ok {
+				am, err := fAmounts(m.DefaultCurrency, strings.Split(val, ","))
+				if err != nil {
+					return rev, err
+				}
+				rev.Amounts = append(rev.Amounts, am...)
+			}
+
+		} else {
+			continue
+		}
+	}
 
 	return rev, nil
 }
 
-func (m *Mapper) MsgWithdrawDelegatorReward(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+func (m *Mapper) MsgWithdrawDelegatorReward(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.RewardTx, err error) {
 	wvc := &distribution.MsgWithdrawDelegatorReward{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev, err = m.grouper(lg, wvc.DelegatorAddress, "coin_received")
+	// Regardless of where the tokens went, the reward counts for the delegator
+	//	rev, err = m.grouper(lg, wvc.DelegatorAddress, "withdraw_rewards")
+	rev = &rewstruct.RewardTx{}
 	if err != nil {
 		return rev, err
 	}
@@ -226,19 +240,18 @@ func (m *Mapper) MsgWithdrawDelegatorReward(msg []byte, lg types.ABCIMessageLog)
 	rev.Delegator = wvc.DelegatorAddress
 	rev.ValidatorSrc = wvc.ValidatorAddress
 
-	// validate it
-
 	return rev, nil
 }
 
 // DistributionWithdrawValidatorCommissionToSub transforms distribution.MsgUndelegate sdk messages to SubsetEvent
-func (m *Mapper) MsgUndelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+func (m *Mapper) MsgUndelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.RewardTx, err error) {
 	wvc := &staking.MsgUndelegate{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev, err = m.grouper(lg, wvc.DelegatorAddress, "coin_received")
+	//	rev, err = m.grouper(lg, wvc.DelegatorAddress, "coin_received")
+	rev = &rewstruct.RewardTx{}
 	if err != nil {
 		return rev, err
 	}
@@ -250,13 +263,14 @@ func (m *Mapper) MsgUndelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstr
 }
 
 // m transforms distribution.MsgDelegate sdk messages to SubsetEvent
-func (m *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+func (m *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.RewardTx, err error) {
 	wvc := &staking.MsgDelegate{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev, err = m.grouper(lg, wvc.DelegatorAddress, "delegate")
+	//	rev, err = m.grouper(lg, wvc.DelegatorAddress, "delegate")
+	rev = &rewstruct.RewardTx{}
 	if err != nil {
 		return rev, err
 	}
@@ -268,31 +282,74 @@ func (m *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruc
 }
 
 // DistributionWithdrawValidatorCommissionToSub transforms distribution.MsgBeginRedelegate sdk messages to SubsetEvent
-func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.RewardTx, err error) {
 	wvc := &staking.MsgBeginRedelegate{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev, err = m.grouper(lg, wvc.DelegatorAddress, "redelegate")
-	if err != nil {
-		return rev, err
+	rev = &rewstruct.RewardTx{
+		Type:         "MsgBeginRedelegate",
+		ValidatorSrc: wvc.ValidatorSrcAddress,
+		ValidatorDst: wvc.ValidatorDstAddress,
+		Delegator:    wvc.DelegatorAddress,
 	}
-	rev.Type = "MsgBeginRedelegate"
-	rev.Delegator = wvc.DelegatorAddress
-	rev.ValidatorSrc = wvc.ValidatorSrcAddress
-	rev.ValidatorDst = wvc.ValidatorDstAddress
+
+	for _, e := range []string{"redelegate", "coin_received", "coin_spent"} {
+		for _, ev := range lg.GetEvents() {
+			if e == ev.GetType() {
+				switch ev.GetType() {
+				case "redelegate":
+					parsed, err := m.groupEvents(ev)
+					if err != nil {
+						return rev, err
+					}
+					if val, ok := parsed[0]["amount"]; ok {
+						//						redelegateAmount = parsed[0]["amount"]
+						am, err := fAmounts(m.DefaultCurrency, strings.Split(val, ","))
+						if err != nil {
+							return rev, err
+						}
+						rev.Amounts = append(rev.Amounts, am...)
+					}
+				case "coin_received":
+					parsed, err := m.groupRSEvents(lg.GetEvents())
+					if err != nil {
+						return rev, err
+					}
+					for i, p := range parsed {
+						am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
+						if err != nil {
+							return rev, err
+						}
+						reward := &rewstruct.RewardAmount{
+							Amounts: am,
+						}
+						if i%2 == 0 { // TODO can we even do sth like this?
+							reward.Validator = wvc.ValidatorSrcAddress
+						} else {
+							reward.Validator = wvc.ValidatorDstAddress
+						}
+						rev.Rewards = append(rev.Rewards, reward)
+					}
+				}
+			} else {
+				continue
+			}
+
+		}
+	}
 
 	return rev, nil
 }
 
-func (m *Mapper) MsgEditValidator(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+func (m *Mapper) MsgEditValidator(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.RewardTx, err error) {
 	wvc := &staking.MsgEditValidator{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev = &rewstruct.Tx{}
+	rev = &rewstruct.RewardTx{}
 	rev.Type = "MsgEditValidator"
 
 	// rev, err = grouper(lg, "xxx")
@@ -303,54 +360,43 @@ func (m *Mapper) MsgEditValidator(msg []byte, lg types.ABCIMessageLog) (rev *rew
 	return rev, nil
 }
 
-func (m *Mapper) MsgCreateValidator(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+func (m *Mapper) MsgCreateValidator(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.RewardTx, err error) {
 	wvc := &staking.MsgCreateValidator{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev = &rewstruct.Tx{}
+	rev = &rewstruct.RewardTx{}
 	rev.Delegator = wvc.DelegatorAddress
-	rev.Validator = []string{wvc.ValidatorAddress}
 	rev.Type = "MsgCreateValidator"
-
-	// rev, err = grouper(lg, "xxx")
-	// if err != nil {
-	// 	return rev, err
-	// }
 
 	return rev, nil
 }
 
-func (m *Mapper) MsgSetWithdrawAddress(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+func (m *Mapper) MsgSetWithdrawAddress(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.RewardTx, err error) {
 	wvc := &distribution.MsgSetWithdrawAddress{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev = &rewstruct.Tx{}
-	rev.Type = "MsgSetWithdrawAddress"
-	rev.Delegator = wvc.DelegatorAddress
-
-	// TODO categorize  withdraw address 	wvc.WithdrawAddress
+	rev = &rewstruct.RewardTx{
+		Type:      "MsgSetWithdrawAddress",
+		Delegator: wvc.DelegatorAddress,
+	}
 
 	return rev, nil
 }
 
-func (m *Mapper) MsgFundCommunityPool(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.Tx, err error) {
+func (m *Mapper) MsgFundCommunityPool(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.RewardTx, err error) {
 	wvc := &distribution.MsgFundCommunityPool{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	rev = &rewstruct.Tx{}
-	rev.Sender = []string{wvc.Depositor}
-	rev.Type = "MsgFundCommunityPool"
-
-	// rev, err = grouper(lg, "xxx")
-	// if err != nil {
-	// 	return rev, err
-	// }
+	rev = &rewstruct.RewardTx{
+		Type: "MsgFundCommunityPool",
+	}
+	//	rev.Sender = []string{wvc.Depositor}
 
 	return rev, nil
 }
@@ -391,7 +437,7 @@ func fAmounts(defaultCurrency string, amounts []string) (am []*rewstruct.Amount,
 
 var rewardEvents = map[string][]string{
 	"coin_received":       {"receiver", "amount"},
-	"coin_spent":          {"spender"},
+	"coin_spent":          {"spender", "amount"},
 	"delegate":            {"amount"},
 	"redelegate":          {"amount"},
 	"withdraw_commission": {"amount"},
@@ -406,7 +452,6 @@ func (m *Mapper) eventsFilter(ev types.StringEvent) (result []types.Attribute, e
 		// skip if no exists
 		return result, nil
 	}
-
 	for _, v := range attr {
 		for _, k := range elen {
 			if k == v.Key {
@@ -452,3 +497,40 @@ func (m *Mapper) groupEvents(ev types.StringEvent) (result []map[string]string, 
 
 	return result, nil
 }
+
+func (m *Mapper) groupRSEvents(ev types.StringEvents) (result []map[string]string, err error) {
+	received := []types.Attribute{}
+	send := []types.Attribute{}
+
+	for _, r := range ev {
+		switch r.GetType() {
+		case "coin_received":
+			received = append(received, r.GetAttributes()...)
+		case "coin_spent":
+			send = append(send, r.GetAttributes()...)
+		}
+	}
+	if len(received) != len(send) {
+		return result, fmt.Errorf("lack of consistency in coin_received/coin_spent events")
+	}
+	eventLen := len(rewardEvents["coin_received"])
+	for i := 0; i < len(received); i = i + eventLen {
+		emap := make(map[string]string)
+
+		for j := 0; j < eventLen; j++ {
+			if i+j <= len(received) {
+				r, s := received[i+j], send[i+j]
+				emap[r.Key] = r.Value
+				emap[s.Key] = s.Value
+			}
+		}
+		result = append(result, emap)
+	}
+
+	return result, nil
+}
+
+// a = [[a:1], [b:1], [a:2], [b:2], [a:3], [b:3]]
+// b = [[a:1], [c:1], [a:2], [c:2], [a:3], [c:3]]
+
+// out = [{a:1,b:1 c:1}, {a:2,b:2, c:2}, {a:3, b:3, c:3}]
