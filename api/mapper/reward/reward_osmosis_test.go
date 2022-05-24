@@ -9,64 +9,74 @@ import (
 	"go.uber.org/zap/zaptest"
 )
 
-// func TestMapper_MsgDelegate_Osmosis(t *testing.T) {
-// 	type args struct {
-// 		msg []byte
-// 		lg  types.ABCIMessageLog
-// 	}
-// 	tests := []struct {
-// 		name    string
-// 		args    args
-// 		wantRev *rewstruct.RewardTx
-// 		wantErr bool
-// 	}{
-// 		{
-// 			name: "MsgDelegate_from_height_4284791",
-// 			args: args{
-// 				msg: []byte("\n+osmo1jm909k0z768sxacj05heqjc7c76ca43rstjxcs\x122osmovaloper1gy0nyn2hscxxayj2pdyu8axmfvv75nnvhc079s\x1a\f\n\x05uosmo\x12\x03120"),
-// 				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
-// 					{Type: "coin_received", Attributes: []types.Attribute{{Key: "receiver", Value: "osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09"}, {Key: "amount", Value: "120uosmo"}}},
-// 					{Type: "coin_spent", Attributes: []types.Attribute{{Key: "spender", Value: "osmo1jm909k0z768sxacj05heqjc7c76ca43rstjxcs"}, {Key: "amount", Value: "120uosmo"}}},
-// 					{Type: "delegate", Attributes: []types.Attribute{{Key: "validator", Value: "osmovaloper1gy0nyn2hscxxayj2pdyu8axmfvv75nnvhc079s"}, {Key: "amount", Value: "120uosmo"}, {Key: "new_shares", Value: "120.000000000000000000"}}},
-// 					{Type: "message", Attributes: []types.Attribute{{Key: "action", Value: "/cosmos.staking.v1beta1.MsgDelegate"}, {Key: "module", Value: "staking"}, {Key: "sender", Value: "osmo1jm909k0z768sxacj05heqjc7c76ca43rstjxcs"}}},
-// 				},
-// 				},
-// 			},
-// 			wantRev: &rewstruct.RewardTx{Type: "MsgDelegate", Sender: []string{"osmo1jm909k0z768sxacj05heqjc7c76ca43rstjxcs"}, ValidatorDst: "osmovaloper1gy0nyn2hscxxayj2pdyu8axmfvv75nnvhc079s", Delegator: "osmo1jm909k0z768sxacj05heqjc7c76ca43rstjxcs", Amounts: []*rewstruct.Amount{{Text: "120uosmo", Currency: "uosmo", Numeric: []byte("x")}}},
-// 		},
-// 		{
-// 			// test height 36 for MsgDelegate event backwards compatibility. Different events and amount units
-// 			name: "MsgDelegate_from_height_36",
-// 			args: args{
-// 				msg: []byte("\n+osmo1de7qx00pz2j6gn9k88ntxxylelkazfk39gwddy\x122osmovaloper1de7qx00pz2j6gn9k88ntxxylelkazfk3llxw6r\x1a\x12\n\x05uosmo\x12\t500000000"),
-// 				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
-// 					{Type: "delegate", Attributes: []types.Attribute{{Key: "validator", Value: "osmovaloper1de7qx00pz2j6gn9k88ntxxylelkazfk3llxw6r"}, {Key: "amount", Value: "500000000"}}},
-// 					{Type: "message", Attributes: []types.Attribute{{Key: "action", Value: "delegate"}, {Key: "module", Value: "staking"}, {Key: "sender", Value: "osmo1de7qx00pz2j6gn9k88ntxxylelkazfk39gwddy"}}},
-// 				},
-// 				},
-// 			},
-// 			// TODO  amount issues / missing accounts
-// 			wantRev: &rewstruct.RewardTx{Type: "MsgDelegate", ValidatorDst: "osmovaloper1de7qx00pz2j6gn9k88ntxxylelkazfk3llxw6r", Delegator: "osmo1de7qx00pz2j6gn9k88ntxxylelkazfk39gwddy", Amounts: []*rewstruct.Amount{{Text: "500000000uosmo", Currency: "uosmo", Numeric: []byte("\x1d\xcde\x00")}}},
-// 		},
-// 		// TODO: Add test cases.
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			m := &Mapper{
-// 				Logger:          zaptest.NewLogger(t),
-// 				DefaultCurrency: "uosmo",
-// 			}
-// 			gotRev, err := m.MsgDelegate(tt.args.msg, tt.args.lg)
-// 			if (err != nil) != tt.wantErr {
-// 				t.Errorf("Mapper.MsgDelegate() error = %v, wantErr %v", err, tt.wantErr)
-// 				return
-// 			}
-// 			if !reflect.DeepEqual(gotRev, tt.wantRev) {
-// 				t.Errorf("Mapper.MsgDelegate() = %v, want %v", gotRev, tt.wantRev)
-// 			}
-// 		})
-// 	}
-// }
+func TestMapper_MsgDelegate_Osmosis(t *testing.T) {
+	type args struct {
+		msg []byte
+		lg  types.ABCIMessageLog
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantRev *rewstruct.RewardTx
+		wantErr bool
+	}{
+		{
+			name: "MsgDelegate_from_height_4284791",
+			args: args{
+				msg: []byte("\n+osmo1jm909k0z768sxacj05heqjc7c76ca43rstjxcs\x122osmovaloper1gy0nyn2hscxxayj2pdyu8axmfvv75nnvhc079s\x1a\f\n\x05uosmo\x12\x03120"),
+				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
+					{Type: "coin_received", Attributes: []types.Attribute{{Key: "receiver", Value: "osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09"}, {Key: "amount", Value: "120uosmo"}}},
+					{Type: "coin_spent", Attributes: []types.Attribute{{Key: "spender", Value: "osmo1jm909k0z768sxacj05heqjc7c76ca43rstjxcs"}, {Key: "amount", Value: "120uosmo"}}},
+					{Type: "delegate", Attributes: []types.Attribute{{Key: "validator", Value: "osmovaloper1gy0nyn2hscxxayj2pdyu8axmfvv75nnvhc079s"}, {Key: "amount", Value: "120uosmo"}, {Key: "new_shares", Value: "120.000000000000000000"}}},
+					{Type: "message", Attributes: []types.Attribute{{Key: "action", Value: "/cosmos.staking.v1beta1.MsgDelegate"}, {Key: "module", Value: "staking"}, {Key: "sender", Value: "osmo1jm909k0z768sxacj05heqjc7c76ca43rstjxcs"}}},
+				},
+				},
+			},
+			wantRev: &rewstruct.RewardTx{
+				Type:         "MsgDelegate",
+				ValidatorDst: "osmovaloper1gy0nyn2hscxxayj2pdyu8axmfvv75nnvhc079s",
+				Delegator:    "osmo1jm909k0z768sxacj05heqjc7c76ca43rstjxcs",
+				Amounts:      []*rewstruct.Amount{{Text: "120uosmo", Currency: "uosmo", Numeric: []byte("x")}},
+			},
+		},
+		{
+			// test height 36 for MsgDelegate event backwards compatibility. Different events and amount units
+			name: "MsgDelegate_from_height_36",
+			args: args{
+				msg: []byte("\n+osmo1de7qx00pz2j6gn9k88ntxxylelkazfk39gwddy\x122osmovaloper1de7qx00pz2j6gn9k88ntxxylelkazfk3llxw6r\x1a\x12\n\x05uosmo\x12\t500000000"),
+				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
+					{Type: "delegate", Attributes: []types.Attribute{{Key: "validator", Value: "osmovaloper1de7qx00pz2j6gn9k88ntxxylelkazfk3llxw6r"}, {Key: "amount", Value: "500000000"}}},
+					{Type: "message", Attributes: []types.Attribute{{Key: "action", Value: "delegate"}, {Key: "module", Value: "staking"}, {Key: "sender", Value: "osmo1de7qx00pz2j6gn9k88ntxxylelkazfk39gwddy"}}},
+				},
+				},
+			},
+			// TODO  amount issues / missing accounts
+			wantRev: &rewstruct.RewardTx{
+				Type:         "MsgDelegate",
+				ValidatorDst: "osmovaloper1de7qx00pz2j6gn9k88ntxxylelkazfk3llxw6r",
+				Delegator:    "osmo1de7qx00pz2j6gn9k88ntxxylelkazfk39gwddy",
+				Amounts:      []*rewstruct.Amount{{Text: "500000000uosmo", Currency: "uosmo", Numeric: []byte("\x1d\xcde\x00")}},
+			},
+		},
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &Mapper{
+				Logger:          zaptest.NewLogger(t),
+				DefaultCurrency: "uosmo",
+			}
+			gotRev, err := m.MsgDelegate(tt.args.msg, tt.args.lg)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Mapper.MsgDelegate() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotRev, tt.wantRev) {
+				t.Errorf("Mapper.MsgDelegate() = %v, want %v", gotRev, tt.wantRev)
+			}
+		})
+	}
+}
 
 func TestMapper_MsgBeginRedelegate_Osmosis(t *testing.T) {
 	type args struct {

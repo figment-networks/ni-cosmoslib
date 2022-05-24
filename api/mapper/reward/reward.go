@@ -191,7 +191,6 @@ func (m *Mapper) grouper(lg types.ABCIMessageLog, delegator string, amount_by st
 */
 
 func (m *Mapper) MsgWithdrawValidatorCommission(msg []byte, lg types.ABCIMessageLog) (rev *rewstruct.RewardTx, err error) {
-	//func (mapper *Mapper) MsgWithdrawValidatorCommission(msg []byte, lg types.ABCIMessageLog, rev *structs.RewardEvent) (err error) {
 	wvc := &distribution.MsgWithdrawValidatorCommission{}
 	if err := proto.Unmarshal(msg, wvc); err != nil {
 		return rev, fmt.Errorf("not a distribution type: %w", err)
@@ -269,14 +268,56 @@ func (m *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruc
 		return rev, fmt.Errorf("not a distribution type: %w", err)
 	}
 
-	//	rev, err = m.grouper(lg, wvc.DelegatorAddress, "delegate")
-	rev = &rewstruct.RewardTx{}
-	if err != nil {
-		return rev, err
+	rev = &rewstruct.RewardTx{
+		Type:         "MsgDelegate",
+		Delegator:    wvc.DelegatorAddress,
+		ValidatorDst: wvc.ValidatorAddress,
 	}
-	rev.Type = "MsgDelegate"
-	rev.Delegator = wvc.DelegatorAddress
-	rev.ValidatorDst = wvc.ValidatorAddress
+
+	delegateAmount := ""
+	for _, e := range []string{"delegate", "coin_received"} {
+		for _, ev := range lg.GetEvents() {
+			if e == ev.GetType() {
+				switch ev.GetType() {
+				case "delegate":
+					parsed, err := m.groupEvents(ev)
+					if err != nil {
+						return rev, err
+					}
+					if val, ok := parsed[0]["amount"]; ok {
+						delegateAmount = parsed[0]["amount"]
+						am, err := fAmounts(m.DefaultCurrency, strings.Split(val, ","))
+						if err != nil {
+							return rev, err
+						}
+						rev.Amounts = append(rev.Amounts, am...)
+					}
+				case "coin_received":
+					parsed, err := m.groupRSEvents(lg.GetEvents())
+					if err != nil {
+						return rev, err
+					}
+					for _, p := range parsed {
+						if p["amount"] == delegateAmount {
+							continue
+						}
+						am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
+						if err != nil {
+							return rev, err
+						}
+						reward := &rewstruct.RewardAmount{
+							Amounts:   am,
+							Validator: wvc.ValidatorAddress,
+						}
+						rev.Rewards = append(rev.Rewards, reward)
+					}
+				}
+			} else {
+				continue
+			}
+
+		}
+	}
 
 	return rev, nil
 }
@@ -295,7 +336,7 @@ func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 		Delegator:    wvc.DelegatorAddress,
 	}
 
-	for _, e := range []string{"redelegate", "coin_received", "coin_spent"} {
+	for _, e := range []string{"redelegate", "coin_received"} {
 		for _, ev := range lg.GetEvents() {
 			if e == ev.GetType() {
 				switch ev.GetType() {
