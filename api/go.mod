@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/cosmos/cosmos-sdk v0.45.4
-	github.com/figment-networks/indexing-engine v0.9.17
+	github.com/figment-networks/indexing-engine v0.9.18
 	github.com/gogo/protobuf v1.3.3
 	github.com/gravity-devs/liquidity v1.4.2
 	go.uber.org/zap v1.19.1
@@ -112,5 +112,3 @@ require (
 replace google.golang.org/grpc => google.golang.org/grpc v1.33.2
 
 replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-
-replace github.com/figment-networks/indexing-engine => ../../indexing-engine

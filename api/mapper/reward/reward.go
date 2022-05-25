@@ -333,7 +333,10 @@ func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 						reward := &rewstruct.RewardAmount{
 							Amounts: am,
 						}
-						if i%2 == 0 { // TODO can we even do sth like this?
+						/*	To be sure which transaction belongs to which validator, we need to check the delegation for the previous block.
+							This code is temporary and may not work in some cases.
+						*/
+						if i%2 == 0 { // TODO in orde
 							reward.Validator = wvc.ValidatorSrcAddress
 						} else {
 							reward.Validator = wvc.ValidatorDstAddress

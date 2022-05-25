@@ -131,6 +131,7 @@ func TestMapper_MsgBeginRedelegate_Osmosis(t *testing.T) {
 				ValidatorSrc: "osmovaloper12rzd5qr2wmpseypvkjl0spusts0eruw2g35lkn",
 				ValidatorDst: "osmovaloper1ej2es5fjztqjcd4pwa0zyvaevtjd2y5w37wr9t",
 				Amounts:      []*rewstruct.Amount{{Text: "954871uosmo", Currency: "uosmo", Numeric: []byte("\x0e\x91\xf7")}},
+				// Rewards from each validator was checked by requesting delegations from height 3932418
 				Rewards: []*rewstruct.RewardAmount{
 					{Amounts: []*rewstruct.Amount{{Text: "3111uosmo", Currency: "uosmo", Numeric: []byte("\x0c'")}}, Validator: "osmovaloper12rzd5qr2wmpseypvkjl0spusts0eruw2g35lkn"},
 					{Amounts: []*rewstruct.Amount{{Text: "3910uosmo", Currency: "uosmo", Numeric: []byte("\x0fF")}}, Validator: "osmovaloper1ej2es5fjztqjcd4pwa0zyvaevtjd2y5w37wr9t"},
