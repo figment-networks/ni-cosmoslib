@@ -251,6 +251,9 @@ func (re *RewardsExtraction) CalculateRewards(ctx context.Context, height, seque
 		if err != nil {
 			return fmt.Errorf("Error fetching initial accounts: %w", err)
 		}
+		if len(acc) == 0 {
+			return errors.New("no accounts found during fetch initial accounts")
+		}
 		b, err := json.Marshal(AccountsHeight{Accounts: acc, Height: height, Sequence: sequence})
 		if err != nil {
 			return err
