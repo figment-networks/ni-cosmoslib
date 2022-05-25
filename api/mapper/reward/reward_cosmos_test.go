@@ -121,155 +121,173 @@ func TestMapper_MsgBeginRedelegate_Cosmos(t *testing.T) {
 	}
 }
 
-// func TestMapper_MsgWithdrawDelegatorReward_Cosmos(t *testing.T) {
-// 	type args struct {
-// 		msg []byte
-// 		lg  types.ABCIMessageLog
-// 	}
-// 	tests := []struct {
-// 		name    string
-// 		args    args
-// 		wantRev *rewstruct.RewardTx
-// 		wantErr bool
-// 	}{
-// 		{
-// 			name: "MsgWithdrawDelegatorReward_from_height_10510043",
-// 			args: args{
-// 				msg: []byte("\n-cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd\x124cosmosvaloper1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2h4gvnl7"),
-// 				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
-// 					{Type: "message", Attributes: []types.Attribute{{Key: "action", Value: "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward"}, {Key: "sender", Value: "cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd"}, {Key: "module", Value: "distribution"}}},
-// 					{Type: "withdraw_rewards", Attributes: []types.Attribute{{Key: "amount", Value: ""}, {Key: "validator", Value: "cosmosvaloper1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2h4gvnl7"}}},
-// 				},
-// 				},
-// 			},
-// 			wantRev: &rewstruct.RewardTx{Type: "MsgWithdrawDelegatorReward", Delegator: "cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd", ValidatorSrc: "cosmosvaloper1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2h4gvnl7"},
-// 		},
-// 		// TODO: Add test cases.
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			m := &Mapper{
-// 				Logger:          zaptest.NewLogger(t),
-// 				DefaultCurrency: "uatom",
-// 			}
-// 			gotRev, err := m.MsgWithdrawDelegatorReward(tt.args.msg, tt.args.lg)
-// 			if (err != nil) != tt.wantErr {
-// 				t.Errorf("Mapper.MsgWithdrawDelegatorReward() error = %v, wantErr %v", err, tt.wantErr)
-// 				return
-// 			}
-// 			if !reflect.DeepEqual(gotRev, tt.wantRev) {
-// 				t.Errorf("Mapper.MsgWithdrawDelegatorReward() = %v, want %v", gotRev, tt.wantRev)
-// 			}
-// 		})
-// 	}
-// }
+func TestMapper_MsgWithdrawDelegatorReward_Cosmos(t *testing.T) {
+	type args struct {
+		msg []byte
+		lg  types.ABCIMessageLog
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantRev *rewstruct.RewardTx
+		wantErr bool
+	}{
+		{
+			name: "MsgWithdrawDelegatorReward_from_height_10510043",
+			args: args{
+				msg: []byte("\n-cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd\x124cosmosvaloper1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2h4gvnl7"),
+				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
+					{Type: "message", Attributes: []types.Attribute{{Key: "action", Value: "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward"}, {Key: "sender", Value: "cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd"}, {Key: "module", Value: "distribution"}}},
+					{Type: "withdraw_rewards", Attributes: []types.Attribute{{Key: "amount", Value: ""}, {Key: "validator", Value: "cosmosvaloper1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2h4gvnl7"}}},
+				},
+				},
+			},
+			wantRev: &rewstruct.RewardTx{
+				Type:         "MsgWithdrawDelegatorReward",
+				Delegator:    "cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd",
+				ValidatorSrc: "cosmosvaloper1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2h4gvnl7",
+			},
+		},
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &Mapper{
+				Logger:          zaptest.NewLogger(t),
+				DefaultCurrency: "uatom",
+			}
+			gotRev, err := m.MsgWithdrawDelegatorReward(tt.args.msg, tt.args.lg)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Mapper.MsgWithdrawDelegatorReward() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotRev, tt.wantRev) {
+				t.Errorf("Mapper.MsgWithdrawDelegatorReward() = %v, want %v", gotRev, tt.wantRev)
+			}
+		})
+	}
+}
 
-// func TestMapper_MsgSetWithdrawAddress_Cosmos(t *testing.T) {
-// 	type args struct {
-// 		msg []byte
-// 		lg  types.ABCIMessageLog
-// 	}
-// 	tests := []struct {
-// 		name    string
-// 		args    args
-// 		wantRev *rewstruct.RewardTx
-// 		wantErr bool
-// 	}{
-// 		{
-// 			name: "MsgSetWithdrawAddress_from_height_10510025",
-// 			args: args{
-// 				msg: []byte("\n-cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd\x12-cosmos1z8wrnv35mmezpseym0jy7lngvsan2alwn8gma9"),
-// 				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
-// 					{Type: "message", Attributes: []types.Attribute{{Key: "action", Value: "/cosmos.distribution.v1beta1.MsgSetWithdrawAddress"}, {Key: "sender", Value: "cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd"}, {Key: "module", Value: "distribution"}}},
-// 					{Type: "set_withdraw_address", Attributes: []types.Attribute{{Key: "withdraw_address", Value: "cosmos1z8wrnv35mmezpseym0jy7lngvsan2alwn8gma9"}}},
-// 				},
-// 				},
-// 			},
-// 			wantRev: &rewstruct.RewardTx{Type: "MsgSetWithdrawAddress", Delegator: "cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd"},
-// 		},
-// 		// TODO: Add test cases.
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			m := &Mapper{
-// 				Logger:          zaptest.NewLogger(t),
-// 				DefaultCurrency: "uatom",
-// 			}
-// 			gotRev, err := m.MsgSetWithdrawAddress(tt.args.msg, tt.args.lg)
-// 			if (err != nil) != tt.wantErr {
-// 				t.Errorf("Mapper.MsgSetWithdrawAddress() error = %v, wantErr %v", err, tt.wantErr)
-// 				return
-// 			}
-// 			if !reflect.DeepEqual(gotRev, tt.wantRev) {
-// 				t.Errorf("Mapper.MsgSetWithdrawAddress() = %v, want %v", gotRev, tt.wantRev)
-// 			}
-// 		})
-// 	}
-// }
+func TestMapper_MsgSetWithdrawAddress_Cosmos(t *testing.T) {
+	type args struct {
+		msg []byte
+		lg  types.ABCIMessageLog
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantRev *rewstruct.RewardTx
+		wantErr bool
+	}{
+		{
+			name: "MsgSetWithdrawAddress_from_height_10510025",
+			args: args{
+				msg: []byte("\n-cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd\x12-cosmos1z8wrnv35mmezpseym0jy7lngvsan2alwn8gma9"),
+				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
+					{Type: "message", Attributes: []types.Attribute{{Key: "action", Value: "/cosmos.distribution.v1beta1.MsgSetWithdrawAddress"}, {Key: "sender", Value: "cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd"}, {Key: "module", Value: "distribution"}}},
+					{Type: "set_withdraw_address", Attributes: []types.Attribute{{Key: "withdraw_address", Value: "cosmos1z8wrnv35mmezpseym0jy7lngvsan2alwn8gma9"}}},
+				},
+				},
+			},
+			wantRev: &rewstruct.RewardTx{
+				Type:            "MsgSetWithdrawAddress",
+				Delegator:       "cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd",
+				RewardRecipient: "cosmos1z8wrnv35mmezpseym0jy7lngvsan2alwn8gma9",
+			},
+		},
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &Mapper{
+				Logger:          zaptest.NewLogger(t),
+				DefaultCurrency: "uatom",
+			}
+			gotRev, err := m.MsgSetWithdrawAddress(tt.args.msg, tt.args.lg)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Mapper.MsgSetWithdrawAddress() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotRev, tt.wantRev) {
+				t.Errorf("Mapper.MsgSetWithdrawAddress() = %v, want %v", gotRev, tt.wantRev)
+			}
+		})
+	}
+}
 
-// func TestMapper_MsgUndelegate_Cosmos(t *testing.T) {
-// 	type args struct {
-// 		msg []byte
-// 		lg  types.ABCIMessageLog
-// 	}
-// 	tests := []struct {
-// 		name    string
-// 		args    args
-// 		wantRev *rewstruct.RewardTx
-// 		wantErr bool
-// 	}{
-// 		{
-// 			name: "MsgUndelegate_from_height_10510043",
-// 			args: args{
-// 				msg: []byte("\n-cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf\x124cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3\x1a\x12\n\x05uatom\x12\t200000000"),
-// 				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
-// 					{Type: "coin_received", Attributes: []types.Attribute{{Key: "receiver", Value: "cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf"}, {Key: "amount", Value: "11628006uatom"}, {Key: "receiver", Value: "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r"}, {Key: "amount", Value: "200000000uatom"}}},
-// 					{Type: "coin_spent", Attributes: []types.Attribute{{Key: "spender", Value: "cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl"}, {Key: "amount", Value: "11628006uatom"}, {Key: "spender", Value: "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh"}, {Key: "amount", Value: "200000000uatom"}}},
-// 					{Type: "message", Attributes: []types.Attribute{{Key: "action", Value: "/cosmos.staking.v1beta1.MsgUndelegate"}, {Key: "sender", Value: "cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl"}, {Key: "sender", Value: "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh"}, {Key: "module", Value: "staking"}, {Key: "sender", Value: "cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf"}}},
-// 					{Type: "transfer", Attributes: []types.Attribute{{Key: "recipient", Value: "cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf"}, {Key: "sender", Value: "cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl"}, {Key: "amount", Value: "11628006uatom"}, {Key: "recipient", Value: "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r"}, {Key: "sender", Value: "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh"}, {Key: "amount", Value: "200000000uatom"}}},
-// 					{Type: "unbond", Attributes: []types.Attribute{{Key: "validator", Value: "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3"}, {Key: "amount", Value: "200000000uatom"}, {Key: "completion_time", Value: "2022-06-06T10:41:55Z"}}},
-// 				},
-// 				},
-// 			},
-// 			wantRev: &rewstruct.RewardTx{Type: "MsgUndelegate", Delegator: "cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf", ValidatorSrc: "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3", Amounts: []*rewstruct.Amount{{Text: "200000000uatom", Currency: "uatom", Numeric: []byte("\x0b\xeb\xc2\x00")}}, Rewards: []*rewstruct.RewardAmount{{Amounts: []*rewstruct.Amount{{Text: "11628006uatom", Currency: "uatom", Numeric: []byte("\xb1m\xe6")}}, Validator: ""}}},
-// 			//			wantRev: &rewstruct.RewardTx{Type: "MsgUndelegate", Sender: []string{"cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl", "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh"}, Recipient: []string{"cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf", "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r"}, Delegator: "cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf", ValidatorSrc: "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3", Amounts: []*rewstruct.Amount{{Text: "200000000uatom", Currency: "uatom", Numeric: []byte("\x0b\xeb\xc2\x00")}}, Rewards: []*rewstruct.Amount{{Text: "11628006uatom", Currency: "uatom", Numeric: []byte("\xb1m\xe6")}}},
-// 		},
-
-// 		{
-// 			name: "MsgUndelegate_afer_Modify_Withdraw_Address_was_set_(Fabricated_test)",
-// 			args: args{
-// 				msg: []byte("\n-cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf\x124cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3\x1a\x12\n\x05uatom\x12\t200000000"),
-// 				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
-// 					{Type: "coin_received", Attributes: []types.Attribute{{Key: "receiver", Value: "cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd"}, {Key: "amount", Value: "11628006uatom"}, {Key: "receiver", Value: "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r"}, {Key: "amount", Value: "200000000uatom"}}},
-// 					{Type: "coin_spent", Attributes: []types.Attribute{{Key: "spender", Value: "cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl"}, {Key: "amount", Value: "11628006uatom"}, {Key: "spender", Value: "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh"}, {Key: "amount", Value: "200000000uatom"}}},
-// 					{Type: "message", Attributes: []types.Attribute{{Key: "action", Value: "/cosmos.staking.v1beta1.MsgUndelegate"}, {Key: "sender", Value: "cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl"}, {Key: "sender", Value: "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh"}, {Key: "module", Value: "staking"}, {Key: "sender", Value: "cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf"}}},
-// 					{Type: "transfer", Attributes: []types.Attribute{{Key: "recipient", Value: "cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd"}, {Key: "sender", Value: "cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl"}, {Key: "amount", Value: "11628006uatom"}, {Key: "recipient", Value: "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r"}, {Key: "sender", Value: "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh"}, {Key: "amount", Value: "200000000uatom"}}},
-// 					{Type: "unbond", Attributes: []types.Attribute{{Key: "validator", Value: "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3"}, {Key: "amount", Value: "200000000uatom"}, {Key: "completion_time", Value: "2022-06-06T10:41:55Z"}}},
-// 				},
-// 				},
-// 			},
-// 			//			wantRev: &rewstruct.RewardTx{Type: "MsgUndelegate", Sender: []string{"cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl", "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh"}, Recipient: []string{"cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd", "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r"}, Delegator: "cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf", ValidatorSrc: "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3", Amounts: []*rewstruct.Amount{{Text: "200000000uatom", Currency: "uatom", Numeric: []byte("\x0b\xeb\xc2\x00")}}, Rewards: []*rewstruct.Amount{{Text: "11628006uatom", Currency: "uatom", Numeric: []byte("\xb1m\xe6")}}},
-// 			wantRev: &rewstruct.RewardTx{Type: "MsgUndelegate", Delegator: "cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf", ValidatorSrc: "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3", Amounts: []*rewstruct.Amount{{Text: "200000000uatom", Currency: "uatom", Numeric: []byte("\x0b\xeb\xc2\x00")}}, Rewards: []*rewstruct.RewardAmount{{Amounts: []*rewstruct.Amount{{Text: "11628006uatom", Currency: "uatom", Numeric: []byte("\xb1m\xe6")}}}}},
-// 		},
-// 		// TODO: Add test cases.
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			m := &Mapper{
-// 				Logger:          zaptest.NewLogger(t),
-// 				DefaultCurrency: "uatom",
-// 			}
-// 			gotRev, err := m.MsgUndelegate(tt.args.msg, tt.args.lg)
-// 			if (err != nil) != tt.wantErr {
-// 				t.Errorf("Mapper.MsgUndelegate() error = %v, wantErr %v", err, tt.wantErr)
-// 				return
-// 			}
-// 			if !reflect.DeepEqual(gotRev, tt.wantRev) {
-// 				t.Errorf("Mapper.MsgUndelegate() = %v, want %v", gotRev, tt.wantRev)
-// 			}
-// 		})
-// 	}
-// }
+func TestMapper_MsgUndelegate_Cosmos(t *testing.T) {
+	type args struct {
+		msg []byte
+		lg  types.ABCIMessageLog
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantRev *rewstruct.RewardTx
+		wantErr bool
+	}{
+		{
+			name: "MsgUndelegate_from_height_10510043",
+			args: args{
+				msg: []byte("\n-cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf\x124cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3\x1a\x12\n\x05uatom\x12\t200000000"),
+				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
+					{Type: "coin_received", Attributes: []types.Attribute{{Key: "receiver", Value: "cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf"}, {Key: "amount", Value: "11628006uatom"}, {Key: "receiver", Value: "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r"}, {Key: "amount", Value: "200000000uatom"}}},
+					{Type: "coin_spent", Attributes: []types.Attribute{{Key: "spender", Value: "cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl"}, {Key: "amount", Value: "11628006uatom"}, {Key: "spender", Value: "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh"}, {Key: "amount", Value: "200000000uatom"}}},
+					{Type: "message", Attributes: []types.Attribute{{Key: "action", Value: "/cosmos.staking.v1beta1.MsgUndelegate"}, {Key: "sender", Value: "cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl"}, {Key: "sender", Value: "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh"}, {Key: "module", Value: "staking"}, {Key: "sender", Value: "cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf"}}},
+					{Type: "transfer", Attributes: []types.Attribute{{Key: "recipient", Value: "cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf"}, {Key: "sender", Value: "cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl"}, {Key: "amount", Value: "11628006uatom"}, {Key: "recipient", Value: "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r"}, {Key: "sender", Value: "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh"}, {Key: "amount", Value: "200000000uatom"}}},
+					{Type: "unbond", Attributes: []types.Attribute{{Key: "validator", Value: "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3"}, {Key: "amount", Value: "200000000uatom"}, {Key: "completion_time", Value: "2022-06-06T10:41:55Z"}}},
+				},
+				},
+			},
+			wantRev: &rewstruct.RewardTx{
+				Type:         "MsgUndelegate",
+				ValidatorSrc: "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3",
+				Delegator:    "cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf",
+				Amounts:      []*rewstruct.Amount{{Text: "200000000uatom", Currency: "uatom", Numeric: []byte("\x0b\xeb\xc2\x00")}},
+				Rewards:      []*rewstruct.RewardAmount{{Amounts: []*rewstruct.Amount{{Text: "11628006uatom", Currency: "uatom", Numeric: []byte("\xb1m\xe6")}}, Validator: "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3"}},
+			},
+		},
+		{
+			name: "MsgUndelegate_afer_Modify_Withdraw_Address_was_set_(Fabricated_test)",
+			args: args{
+				msg: []byte("\n-cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf\x124cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3\x1a\x12\n\x05uatom\x12\t200000000"),
+				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
+					{Type: "coin_received", Attributes: []types.Attribute{{Key: "receiver", Value: "cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd"}, {Key: "amount", Value: "11628006uatom"}, {Key: "receiver", Value: "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r"}, {Key: "amount", Value: "200000000uatom"}}},
+					{Type: "coin_spent", Attributes: []types.Attribute{{Key: "spender", Value: "cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl"}, {Key: "amount", Value: "11628006uatom"}, {Key: "spender", Value: "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh"}, {Key: "amount", Value: "200000000uatom"}}},
+					{Type: "message", Attributes: []types.Attribute{{Key: "action", Value: "/cosmos.staking.v1beta1.MsgUndelegate"}, {Key: "sender", Value: "cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl"}, {Key: "sender", Value: "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh"}, {Key: "module", Value: "staking"}, {Key: "sender", Value: "cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf"}}},
+					{Type: "transfer", Attributes: []types.Attribute{{Key: "recipient", Value: "cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd"}, {Key: "sender", Value: "cosmos1jv65s3grqf6v6jl3dp4t6c9t9rk99cd88lyufl"}, {Key: "amount", Value: "11628006uatom"}, {Key: "recipient", Value: "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r"}, {Key: "sender", Value: "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh"}, {Key: "amount", Value: "200000000uatom"}}},
+					{Type: "unbond", Attributes: []types.Attribute{{Key: "validator", Value: "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3"}, {Key: "amount", Value: "200000000uatom"}, {Key: "completion_time", Value: "2022-06-06T10:41:55Z"}}},
+				},
+				},
+			},
+			wantRev: &rewstruct.RewardTx{
+				Type:            "MsgUndelegate",
+				ValidatorSrc:    "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3",
+				Delegator:       "cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf",
+				Amounts:         []*rewstruct.Amount{{Text: "200000000uatom", Currency: "uatom", Numeric: []byte("\x0b\xeb\xc2\x00")}},
+				Rewards:         []*rewstruct.RewardAmount{{Amounts: []*rewstruct.Amount{{Text: "11628006uatom", Currency: "uatom", Numeric: []byte("\xb1m\xe6")}}, Validator: "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3"}},
+				RewardRecipient: "cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd",
+			},
+		},
+		//TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &Mapper{
+				Logger:          zaptest.NewLogger(t),
+				DefaultCurrency: "uatom",
+			}
+			gotRev, err := m.MsgUndelegate(tt.args.msg, tt.args.lg)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Mapper.MsgUndelegate() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotRev, tt.wantRev) {
+				t.Errorf("Mapper.MsgUndelegate() = %v, want %v", gotRev, tt.wantRev)
+			}
+		})
+	}
+}
 
 func TestMapper_MsgWithdrawValidatorCommission_Cosmos(t *testing.T) {
 	type args struct {
@@ -295,7 +313,11 @@ func TestMapper_MsgWithdrawValidatorCommission_Cosmos(t *testing.T) {
 				},
 				},
 			},
-			wantRev: &rewstruct.RewardTx{Type: "MsgWithdrawValidatorCommission", ValidatorDst: "cosmosvaloper1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2h4gvnl7", Amounts: []*rewstruct.Amount{{Text: "36370uatom", Currency: "uatom", Numeric: []byte("\x8e\x12")}}},
+			wantRev: &rewstruct.RewardTx{
+				Type:         "MsgWithdrawValidatorCommission",
+				ValidatorDst: "cosmosvaloper1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2h4gvnl7",
+				Amounts:      []*rewstruct.Amount{{Text: "36370uatom", Currency: "uatom", Numeric: []byte("\x8e\x12")}},
+			},
 		},
 		// TODO: Add test cases.
 	}

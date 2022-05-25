@@ -157,109 +157,127 @@ func TestMapper_MsgBeginRedelegate_Osmosis(t *testing.T) {
 	}
 }
 
-// func TestMapper_MsgWithdrawDelegatorReward_Osmosis(t *testing.T) {
-// 	type args struct {
-// 		msg []byte
-// 		lg  types.ABCIMessageLog
-// 	}
-// 	tests := []struct {
-// 		name    string
-// 		args    args
-// 		wantRev *rewstruct.RewardTx
-// 		wantErr bool
-// 	}{
-// 		{
-// 			name: "MsgWithdrawDelegatorReward_from_height_4373725",
-// 			args: args{
-// 				msg: []byte("\n+osmo14w50thy5jlank0c8vdzdlzehmf6hcjg89wkzmg\x122osmovaloper1cyw4vw20el8e7ez8080md0r8psg25n0cq98a9n"),
-// 				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
-// 					{Type: "coin_received", Attributes: []types.Attribute{{Key: "receiver", Value: "osmo14w50thy5jlank0c8vdzdlzehmf6hcjg89wkzmg"}, {Key: "amount", Value: "113522uosmo"}}},
-// 					{Type: "coin_spent", Attributes: []types.Attribute{{Key: "spender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "amount", Value: "113522uosmo"}}},
-// 					{Type: "message", Attributes: []types.Attribute{{Key: "action", Value: "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward"}, {Key: "sender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "module", Value: "distribution"}, {Key: "sender", Value: "osmo14w50thy5jlank0c8vdzdlzehmf6hcjg89wkzmg"}}},
-// 					{Type: "transfer", Attributes: []types.Attribute{{Key: "recipient", Value: "osmo14w50thy5jlank0c8vdzdlzehmf6hcjg89wkzmg"}, {Key: "sender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "amount", Value: "113522uosmo"}}},
-// 					{Type: "withdraw_rewards", Attributes: []types.Attribute{{Key: "amount", Value: "113522uosmo"}, {Key: "validator", Value: "osmovaloper1cyw4vw20el8e7ez8080md0r8psg25n0cq98a9n"}}},
-// 				},
-// 				},
-// 			},
-// 			wantRev: &rewstruct.RewardTx{Type: "MsgWithdrawDelegatorReward", Sender: []string{"osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, Recipient: []string{"osmo14w50thy5jlank0c8vdzdlzehmf6hcjg89wkzmg"}, Delegator: "osmo14w50thy5jlank0c8vdzdlzehmf6hcjg89wkzmg", ValidatorSrc: "osmovaloper1cyw4vw20el8e7ez8080md0r8psg25n0cq98a9n", Rewards: []*rewstruct.Amount{{Text: "113522uosmo", Currency: "uosmo", Numeric: []byte("\x01\xbbr")}}},
-// 		},
-// 		{
-// 			// Modify Withdraw Address https://www.mintscan.io/osmosis/txs/01844C9906EC71D72EB50F2968D5ADCA4EFA4B861722E66A835AC532DC1101C3
-// 			// Get Reward https://www.mintscan.io/osmosis/txs/C25F9C53231799E3A75729B2C08BE88BD1A8E88207C36BC82A7308BD2700CDB9
-// 			name: "MsgWithdrawDelegatorReward_from_height_3951103_afer_Modify_Withdraw_Address_from_height_3878913",
-// 			args: args{
-// 				msg: []byte("\n+osmo1udv3dqftlrkc5yxqn9tnu7atyg8wnl4e4wm84a\x122osmovaloper1thsw3n94lzxy0knhss9n554zqp4dnfzx78j7sq"),
-// 				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
-// 					{Type: "coin_received", Attributes: []types.Attribute{{Key: "receiver", Value: "osmo153geppn7520n2kvsl850wxkz5r576n3wxnj0yj"}, {Key: "amount", Value: "1647849uosmo"}}},
-// 					{Type: "coin_spent", Attributes: []types.Attribute{{Key: "spender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "amount", Value: "1647849uosmo"}}},
-// 					{Type: "message", Attributes: []types.Attribute{{Key: "action", Value: "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward"}, {Key: "sender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "module", Value: "distribution"}, {Key: "sender", Value: "osmo1udv3dqftlrkc5yxqn9tnu7atyg8wnl4e4wm84a"}}},
-// 					{Type: "transfer", Attributes: []types.Attribute{{Key: "recipient", Value: "osmo153geppn7520n2kvsl850wxkz5r576n3wxnj0yj"}, {Key: "sender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "amount", Value: "1647849uosmo"}}},
-// 					{Type: "withdraw_rewards", Attributes: []types.Attribute{{Key: "amount", Value: "1647849uosmo"}, {Key: "validator", Value: "osmovaloper1thsw3n94lzxy0knhss9n554zqp4dnfzx78j7sq"}}},
-// 				},
-// 				},
-// 			},
-// 			wantRev: &rewstruct.RewardTx{Type: "MsgWithdrawDelegatorReward", Sender: []string{"osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, Recipient: []string{"osmo153geppn7520n2kvsl850wxkz5r576n3wxnj0yj"}, Delegator: "osmo1udv3dqftlrkc5yxqn9tnu7atyg8wnl4e4wm84a", ValidatorSrc: "osmovaloper1thsw3n94lzxy0knhss9n554zqp4dnfzx78j7sq", Rewards: []*rewstruct.Amount{{Text: "1647849uosmo", Currency: "uosmo", Numeric: []byte("\x19$\xe9")}}},
-// 		},
-// 		// TODO: Add test cases.
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			m := &Mapper{
-// 				Logger:          zaptest.NewLogger(t),
-// 				DefaultCurrency: "uosmo",
-// 			}
-// 			gotRev, err := m.MsgWithdrawDelegatorReward(tt.args.msg, tt.args.lg)
-// 			if (err != nil) != tt.wantErr {
-// 				t.Errorf("Mapper.MsgWithdrawDelegatorReward() error = %v, wantErr %v", err, tt.wantErr)
-// 				return
-// 			}
-// 			if !reflect.DeepEqual(gotRev, tt.wantRev) {
-// 				t.Errorf("Mapper.MsgWithdrawDelegatorReward() = %v, want %v", gotRev, tt.wantRev)
-// 			}
-// 		})
-// 	}
-// }
+func TestMapper_MsgWithdrawDelegatorReward_Osmosis(t *testing.T) {
+	type args struct {
+		msg []byte
+		lg  types.ABCIMessageLog
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantRev *rewstruct.RewardTx
+		wantErr bool
+	}{
+		{
+			name: "MsgWithdrawDelegatorReward_from_height_4373725",
+			args: args{
+				msg: []byte("\n+osmo14w50thy5jlank0c8vdzdlzehmf6hcjg89wkzmg\x122osmovaloper1cyw4vw20el8e7ez8080md0r8psg25n0cq98a9n"),
+				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
+					{Type: "coin_received", Attributes: []types.Attribute{{Key: "receiver", Value: "osmo14w50thy5jlank0c8vdzdlzehmf6hcjg89wkzmg"}, {Key: "amount", Value: "113522uosmo"}}},
+					{Type: "coin_spent", Attributes: []types.Attribute{{Key: "spender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "amount", Value: "113522uosmo"}}},
+					{Type: "message", Attributes: []types.Attribute{{Key: "action", Value: "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward"}, {Key: "sender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "module", Value: "distribution"}, {Key: "sender", Value: "osmo14w50thy5jlank0c8vdzdlzehmf6hcjg89wkzmg"}}},
+					{Type: "transfer", Attributes: []types.Attribute{{Key: "recipient", Value: "osmo14w50thy5jlank0c8vdzdlzehmf6hcjg89wkzmg"}, {Key: "sender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "amount", Value: "113522uosmo"}}},
+					{Type: "withdraw_rewards", Attributes: []types.Attribute{{Key: "amount", Value: "113522uosmo"}, {Key: "validator", Value: "osmovaloper1cyw4vw20el8e7ez8080md0r8psg25n0cq98a9n"}}},
+				},
+				},
+			},
+			wantRev: &rewstruct.RewardTx{
+				Type:         "MsgWithdrawDelegatorReward",
+				Delegator:    "osmo14w50thy5jlank0c8vdzdlzehmf6hcjg89wkzmg",
+				ValidatorSrc: "osmovaloper1cyw4vw20el8e7ez8080md0r8psg25n0cq98a9n",
+				Rewards:      []*rewstruct.RewardAmount{{Amounts: []*rewstruct.Amount{{Text: "113522uosmo", Currency: "uosmo", Numeric: []byte("\x01\xbbr")}}, Validator: "osmovaloper1cyw4vw20el8e7ez8080md0r8psg25n0cq98a9n"}},
+			},
+		},
+		{
+			// Modify Withdraw Address https://www.mintscan.io/osmosis/txs/01844C9906EC71D72EB50F2968D5ADCA4EFA4B861722E66A835AC532DC1101C3
+			// Get Reward https://www.mintscan.io/osmosis/txs/C25F9C53231799E3A75729B2C08BE88BD1A8E88207C36BC82A7308BD2700CDB9
+			name: "MsgWithdrawDelegatorReward_from_height_3951103_afer_Modify_Withdraw_Address_from_height_3878913",
+			args: args{
+				msg: []byte("\n+osmo1udv3dqftlrkc5yxqn9tnu7atyg8wnl4e4wm84a\x122osmovaloper1thsw3n94lzxy0knhss9n554zqp4dnfzx78j7sq"),
+				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
+					{Type: "coin_received", Attributes: []types.Attribute{{Key: "receiver", Value: "osmo153geppn7520n2kvsl850wxkz5r576n3wxnj0yj"}, {Key: "amount", Value: "1647849uosmo"}}},
+					{Type: "coin_spent", Attributes: []types.Attribute{{Key: "spender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "amount", Value: "1647849uosmo"}}},
+					{Type: "message", Attributes: []types.Attribute{{Key: "action", Value: "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward"}, {Key: "sender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "module", Value: "distribution"}, {Key: "sender", Value: "osmo1udv3dqftlrkc5yxqn9tnu7atyg8wnl4e4wm84a"}}},
+					{Type: "transfer", Attributes: []types.Attribute{{Key: "recipient", Value: "osmo153geppn7520n2kvsl850wxkz5r576n3wxnj0yj"}, {Key: "sender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "amount", Value: "1647849uosmo"}}},
+					{Type: "withdraw_rewards", Attributes: []types.Attribute{{Key: "amount", Value: "1647849uosmo"}, {Key: "validator", Value: "osmovaloper1thsw3n94lzxy0knhss9n554zqp4dnfzx78j7sq"}}},
+				},
+				},
+			},
+			wantRev: &rewstruct.RewardTx{
+				Type:            "MsgWithdrawDelegatorReward",
+				Delegator:       "osmo1udv3dqftlrkc5yxqn9tnu7atyg8wnl4e4wm84a",
+				ValidatorSrc:    "osmovaloper1thsw3n94lzxy0knhss9n554zqp4dnfzx78j7sq",
+				Rewards:         []*rewstruct.RewardAmount{{Amounts: []*rewstruct.Amount{{Text: "1647849uosmo", Currency: "uosmo", Numeric: []byte("\x19$\xe9")}}, Validator: "osmovaloper1thsw3n94lzxy0knhss9n554zqp4dnfzx78j7sq"}},
+				RewardRecipient: "osmo153geppn7520n2kvsl850wxkz5r576n3wxnj0yj",
+			},
+		},
+		// TODO: Add test cases.
 
-// func TestMapper_MsgUndelegate_Osmosis(t *testing.T) {
-// 	type args struct {
-// 		msg []byte
-// 		lg  types.ABCIMessageLog
-// 	}
-// 	tests := []struct {
-// 		name    string
-// 		args    args
-// 		wantRev *rewstruct.RewardTx
-// 		wantErr bool
-// 	}{
-// 		{
-// 			name: "MsgUndelegate_from_height_4373725",
-// 			args: args{
-// 				msg: []byte("\n+osmo12d9lvpyfcq9cjcn6chty2yv27w22nye2qark47\x122osmovaloper12zwq8pcmmgwsl95rueqsf65avfg5zcj047ucw6\x1a\x11\n\x05uosmo\x12\b10100000"),
-// 				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
-// 					{Type: "coin_received", Attributes: []types.Attribute{{Key: "receiver", Value: "osmo12d9lvpyfcq9cjcn6chty2yv27w22nye2qark47"}, {Key: "amount", Value: "1ibc/BE1BB42D4BE3C30D50B68D7C41DB4DFCE9678E8EF8C539F6E6A9345048894FCC,1373536uosmo"}, {Key: "receiver", Value: "osmo1tygms3xhhs3yv487phx3dw4a95jn7t7lfqxwe3"}, {Key: "amount", Value: "10100000uosmo"}}},
-// 					{Type: "coin_spent", Attributes: []types.Attribute{{Key: "spender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "amount", Value: "1ibc/BE1BB42D4BE3C30D50B68D7C41DB4DFCE9678E8EF8C539F6E6A9345048894FCC,1373536uosmo"}, {Key: "spender", Value: "osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09"}, {Key: "amount", Value: "10100000uosmo"}}},
-// 					{Type: "unbond", Attributes: []types.Attribute{{Key: "validator", Value: "osmovaloper12zwq8pcmmgwsl95rueqsf65avfg5zcj047ucw6"}, {Key: "amount", Value: "10100000uosmo"}, {Key: "completion_time", Value: "2022-05-27T10:53:55Z"}}},
-// 				},
-// 				},
-// 			},
-// 			wantRev: &rewstruct.RewardTx{Type: "MsgUndelegate", Sender: []string{"osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld", "osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09"}, Recipient: []string{"osmo12d9lvpyfcq9cjcn6chty2yv27w22nye2qark47", "osmo1tygms3xhhs3yv487phx3dw4a95jn7t7lfqxwe3"}, Delegator: "osmo12d9lvpyfcq9cjcn6chty2yv27w22nye2qark47", ValidatorSrc: "osmovaloper12zwq8pcmmgwsl95rueqsf65avfg5zcj047ucw6", Amounts: []*rewstruct.Amount{{Text: "10100000uosmo", Currency: "uosmo", Numeric: []byte("\x9a\x1d ")}}, Rewards: []*rewstruct.Amount{{Text: "1ibc/BE1BB42D4BE3C30D50B68D7C41DB4DFCE9678E8EF8C539F6E6A9345048894FCC", Currency: "ibc/BE1BB42D4BE3C30D50B68D7C41DB4DFCE9678E8EF8C539F6E6A9345048894FCC", Numeric: []byte("\x01")}, {Text: "1373536uosmo", Currency: "uosmo", Numeric: []byte("\x14\xf5`")}}},
-// 		},
-// 		// TODO: Add test cases.
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			m := &Mapper{
-// 				Logger:          zaptest.NewLogger(t),
-// 				DefaultCurrency: "uosmo",
-// 			}
-// 			gotRev, err := m.MsgUndelegate(tt.args.msg, tt.args.lg)
-// 			if (err != nil) != tt.wantErr {
-// 				t.Errorf("Mapper.MsgUndelegate() error = %v, wantErr %v", err, tt.wantErr)
-// 				return
-// 			}
-// 			if !reflect.DeepEqual(gotRev, tt.wantRev) {
-// 				t.Errorf("Mapper.MsgUndelegate() = %v, want %v", gotRev, tt.wantRev)
-// 			}
-// 		})
-// 	}
-// }
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &Mapper{
+				Logger:          zaptest.NewLogger(t),
+				DefaultCurrency: "uosmo",
+			}
+			gotRev, err := m.MsgWithdrawDelegatorReward(tt.args.msg, tt.args.lg)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Mapper.MsgWithdrawDelegatorReward() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotRev, tt.wantRev) {
+				t.Errorf("Mapper.MsgWithdrawDelegatorReward() = %v, want %v", gotRev, tt.wantRev)
+			}
+		})
+	}
+}
+
+func TestMapper_MsgUndelegate_Osmosis(t *testing.T) {
+	type args struct {
+		msg []byte
+		lg  types.ABCIMessageLog
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantRev *rewstruct.RewardTx
+		wantErr bool
+	}{
+		{
+			name: "MsgUndelegate_from_height_4373725",
+			args: args{
+				msg: []byte("\n+osmo12d9lvpyfcq9cjcn6chty2yv27w22nye2qark47\x122osmovaloper12zwq8pcmmgwsl95rueqsf65avfg5zcj047ucw6\x1a\x11\n\x05uosmo\x12\b10100000"),
+				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
+					{Type: "coin_received", Attributes: []types.Attribute{{Key: "receiver", Value: "osmo12d9lvpyfcq9cjcn6chty2yv27w22nye2qark47"}, {Key: "amount", Value: "1ibc/BE1BB42D4BE3C30D50B68D7C41DB4DFCE9678E8EF8C539F6E6A9345048894FCC,1373536uosmo"}, {Key: "receiver", Value: "osmo1tygms3xhhs3yv487phx3dw4a95jn7t7lfqxwe3"}, {Key: "amount", Value: "10100000uosmo"}}},
+					{Type: "coin_spent", Attributes: []types.Attribute{{Key: "spender", Value: "osmo1jv65s3grqf6v6jl3dp4t6c9t9rk99cd80yhvld"}, {Key: "amount", Value: "1ibc/BE1BB42D4BE3C30D50B68D7C41DB4DFCE9678E8EF8C539F6E6A9345048894FCC,1373536uosmo"}, {Key: "spender", Value: "osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09"}, {Key: "amount", Value: "10100000uosmo"}}},
+					{Type: "unbond", Attributes: []types.Attribute{{Key: "validator", Value: "osmovaloper12zwq8pcmmgwsl95rueqsf65avfg5zcj047ucw6"}, {Key: "amount", Value: "10100000uosmo"}, {Key: "completion_time", Value: "2022-05-27T10:53:55Z"}}},
+				},
+				},
+			},
+			wantRev: &rewstruct.RewardTx{
+				Type:         "MsgUndelegate",
+				ValidatorSrc: "osmovaloper12zwq8pcmmgwsl95rueqsf65avfg5zcj047ucw6",
+				Delegator:    "osmo12d9lvpyfcq9cjcn6chty2yv27w22nye2qark47",
+				Amounts:      []*rewstruct.Amount{{Text: "10100000uosmo", Currency: "uosmo", Numeric: []byte("\x9a\x1d ")}},
+				Rewards:      []*rewstruct.RewardAmount{{Amounts: []*rewstruct.Amount{{Text: "1ibc/BE1BB42D4BE3C30D50B68D7C41DB4DFCE9678E8EF8C539F6E6A9345048894FCC", Currency: "ibc/BE1BB42D4BE3C30D50B68D7C41DB4DFCE9678E8EF8C539F6E6A9345048894FCC", Numeric: []byte("\x01")}, {Text: "1373536uosmo", Currency: "uosmo", Numeric: []byte("\x14\xf5`")}}, Validator: "osmovaloper12zwq8pcmmgwsl95rueqsf65avfg5zcj047ucw6"}},
+			},
+		},
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &Mapper{
+				Logger:          zaptest.NewLogger(t),
+				DefaultCurrency: "uosmo",
+			}
+			gotRev, err := m.MsgUndelegate(tt.args.msg, tt.args.lg)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Mapper.MsgUndelegate() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotRev, tt.wantRev) {
+				t.Errorf("Mapper.MsgUndelegate() = %v, want %v", gotRev, tt.wantRev)
+			}
+		})
+	}
+}
