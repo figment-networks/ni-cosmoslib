@@ -44,10 +44,10 @@ func ParsePacket(data []byte, event *structs.SubsetEvent) error {
 	}
 	amt, ok := new(big.Int).SetString(packetData.Amount, 10)
 	if !ok {
-		return fmt.Errorf("packet amount not a string: %w", packetData)
+		return fmt.Errorf("packet amount not a string: %v", packetData)
 	}
 	if amt.Cmp(bigZero) < 0 || len(packetData.Denom) == 0 || len(packetData.Sender) == 0 || len(packetData.Receiver) == 0 {
-		return fmt.Errorf("packet malformed: %w", packetData)
+		return fmt.Errorf("packet malformed: %v", packetData)
 	}
 	// adding the Amount on the receiver.
 	event.Sender = []structs.EventTransfer{
