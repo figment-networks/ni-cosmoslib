@@ -18,6 +18,9 @@ type PacketData struct {
 }
 
 func ParsePacket(data []byte, event *structs.SubsetEvent) error {
+	if len(data) == 0 {
+		return nil
+	}
 	var packetDataInterface interface{}
 	err := json.Unmarshal(data, &packetDataInterface)
 	if err != nil {
