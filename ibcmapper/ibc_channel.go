@@ -6,6 +6,7 @@ import (
 
 	"github.com/figment-networks/indexing-engine/structs"
 	shared "github.com/figment-networks/indexing-engine/structs"
+
 	"github.com/figment-networks/ni-cosmoslib/api/util"
 
 	channel "github.com/cosmos/ibc-go/modules/core/04-channel/types"
@@ -195,7 +196,7 @@ func IBCChannelRecvPacketToSub(msg []byte) (se shared.SubsetEvent, err error) {
 		return se, err
 	}
 
-	return shared.SubsetEvent{
+	event := shared.SubsetEvent{
 		Type:   []string{"recv_packet"},
 		Module: "ibc",
 		Node: map[string][]structs.Account{
@@ -215,7 +216,9 @@ func IBCChannelRecvPacketToSub(msg []byte) (se shared.SubsetEvent, err error) {
 			"proof_height_revision_number":          {strconv.FormatUint(m.ProofHeight.RevisionNumber, 10)},
 			"proof_height_revision_height":          {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
 		},
-	}, nil
+	}
+	err = util.ParsePacket(m.Packet.Data, &event)
+	return event, err
 }
 
 // IBCChannelTimeoutToSub transforms ibc.MsgTimeout sdk messages to SubsetEvent
@@ -231,7 +234,7 @@ func IBCChannelTimeoutToSub(msg []byte) (se shared.SubsetEvent, err error) {
 		return se, err
 	}
 
-	return shared.SubsetEvent{
+	event := shared.SubsetEvent{
 		Type:   []string{"timeout"},
 		Module: "ibc",
 		Node: map[string][]structs.Account{
@@ -252,7 +255,9 @@ func IBCChannelTimeoutToSub(msg []byte) (se shared.SubsetEvent, err error) {
 			"proof_height_revision_height":          {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
 			"next_sequence_recv":                    {strconv.FormatUint(m.NextSequenceRecv, 10)},
 		},
-	}, nil
+	}
+	err = util.ParsePacket(m.Packet.Data, &event)
+	return event, err
 }
 
 // IBCChannelAcknowledgementToSub transforms ibc.MsgAcknowledgement sdk messages to SubsetEvent
@@ -268,7 +273,7 @@ func IBCChannelAcknowledgementToSub(msg []byte) (se shared.SubsetEvent, err erro
 		return se, err
 	}
 
-	return shared.SubsetEvent{
+	event := shared.SubsetEvent{
 		Type:   []string{"channel_acknowledgement"},
 		Module: "ibc",
 		Node: map[string][]structs.Account{
@@ -289,5 +294,7 @@ func IBCChannelAcknowledgementToSub(msg []byte) (se shared.SubsetEvent, err erro
 			"proof_height_revision_number":          {strconv.FormatUint(m.ProofHeight.RevisionNumber, 10)},
 			"proof_height_revision_height":          {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
 		},
-	}, nil
+	}
+	err = util.ParsePacket(m.Packet.Data, &event)
+	return event, err
 }
