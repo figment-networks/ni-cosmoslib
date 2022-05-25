@@ -443,6 +443,14 @@ func (re *RewardsExtraction) fetchHeightData(ctx context.Context, heights chan H
 }
 
 func (re *RewardsExtraction) fetchHeightUnclaimedRewards(ctx context.Context, height, sequence uint64, accounts map[string]interface{}) (newdelegs *rewstruct.Delegators, err error) {
+	newdelegs = &rewstruct.Delegators{
+		Height:     height,
+		Delegators: make(map[string]*rewstruct.ValidatorsUnclaimed),
+	}
+	if len(accounts) == 0 {
+		return newdelegs, nil
+	}
+
 	processing := make(chan string, 100)
 	outp := make(chan DelegateResponse, 100)
 	defer close(outp)
@@ -456,11 +464,6 @@ func (re *RewardsExtraction) fetchHeightUnclaimedRewards(ctx context.Context, he
 	// it's simpler than locking, counters or whatever.
 	// so below we always expect len(accounts) replies
 	go populateAccounts(processing, accounts)
-
-	newdelegs = &rewstruct.Delegators{
-		Height:     height,
-		Delegators: make(map[string]*rewstruct.ValidatorsUnclaimed),
-	}
 
 	var (
 		counter int
