@@ -1,9 +1,12 @@
 package ibcmapper
 
 import (
+	"encoding/json"
 	"fmt"
+	"math/big"
 	"strconv"
 
+	"github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
 	"github.com/figment-networks/indexing-engine/structs"
 	shared "github.com/figment-networks/indexing-engine/structs"
 	"github.com/figment-networks/ni-cosmoslib/api/util"
@@ -17,6 +20,7 @@ var (
 	// and tx.go is missing in https://github.com/cosmos/ibc-go/tree/main/modules/core/04-channel/types
 	// so manually use the name defined in tx.pb.go
 	constChannelTimeoutOnClose = "proof_close"
+	bigZero                    = new(big.Int).SetInt64(0)
 )
 
 // IBCChannelOpenInitToSub transforms ibc.MsgChannelOpenInit sdk messages to SubsetEvent
@@ -223,7 +227,7 @@ func IBCChannelRecvPacketToSub(msg []byte) (se shared.SubsetEvent, err error) {
 			"proof_height_revision_height":          {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
 		},
 	}
-	err = util.ParsePacket(m.Packet.Data, &event)
+	err = ParsePacket(m.Packet.Data, &event)
 	return event, err
 }
 
@@ -262,7 +266,7 @@ func IBCChannelTimeoutToSub(msg []byte) (se shared.SubsetEvent, err error) {
 			"next_sequence_recv":                    {strconv.FormatUint(m.NextSequenceRecv, 10)},
 		},
 	}
-	err = util.ParsePacket(m.Packet.Data, &event)
+	err = ParsePacket(m.Packet.Data, &event)
 	return event, err
 }
 
@@ -307,7 +311,7 @@ func IBCChannelTimeoutOnCloseToSub(msg []byte) (se shared.SubsetEvent, err error
 			"next_sequence_recv":                    {strconv.FormatUint(m.NextSequenceRecv, 10)},
 		},
 	}
-	err = util.ParsePacket(m.Packet.Data, &event)
+	err = ParsePacket(m.Packet.Data, &event)
 	return event, err
 }
 
@@ -346,6 +350,40 @@ func IBCChannelAcknowledgementToSub(msg []byte) (se shared.SubsetEvent, err erro
 			"proof_height_revision_height":          {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
 		},
 	}
-	err = util.ParsePacket(m.Packet.Data, &event)
+	err = ParsePacket(m.Packet.Data, &event)
 	return event, err
+}
+
+func ParsePacket(data []byte, event *structs.SubsetEvent) error {
+	var packetData *types.FungibleTokenPacketData
+	err := json.Unmarshal(data, &packetData)
+	if err != nil {
+		return fmt.Errorf("packet malformed: %w", err)
+	}
+	amt, ok := new(big.Int).SetString(packetData.Amount, 10)
+	if !ok {
+		return fmt.Errorf("packet amount not a string: %v", packetData)
+	}
+	if amt.Cmp(bigZero) < 0 || len(packetData.Denom) == 0 || len(packetData.Sender) == 0 || len(packetData.Receiver) == 0 {
+		return fmt.Errorf("packet malformed: %v", packetData)
+	}
+	// adding the Amount on the receiver.
+	event.Sender = []structs.EventTransfer{
+		{
+			Account: structs.Account{ID: packetData.Sender},
+		},
+	}
+	event.Recipient = []structs.EventTransfer{
+		{
+			Account: structs.Account{ID: packetData.Receiver},
+			Amounts: []structs.TransactionAmount{
+				{
+					Text:     amt.String(),
+					Numeric:  amt,
+					Currency: packetData.Denom,
+				},
+			},
+		},
+	}
+	return nil
 }

@@ -1,7 +1,9 @@
 package ibcmapper
 
 import (
+	"encoding/json"
 	"fmt"
+	"math/big"
 	"strconv"
 
 	"github.com/figment-networks/indexing-engine/structs"
@@ -12,6 +14,8 @@ import (
 	channel "github.com/cosmos/ibc-go/modules/core/04-channel/types"
 	"github.com/gogo/protobuf/proto"
 )
+
+var bigZero = new(big.Int).SetInt64(0)
 
 // IBCChannelOpenInitToSub transforms ibc.MsgChannelOpenInit sdk messages to SubsetEvent
 func IBCChannelOpenInitToSub(msg []byte) (se shared.SubsetEvent, err error) {
@@ -217,7 +221,7 @@ func IBCChannelRecvPacketToSub(msg []byte) (se shared.SubsetEvent, err error) {
 			"proof_height_revision_height":          {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
 		},
 	}
-	err = util.ParsePacket(m.Packet.Data, &event)
+	err = ParsePacket(m.Packet.Data, &event)
 	return event, err
 }
 
@@ -256,7 +260,7 @@ func IBCChannelTimeoutToSub(msg []byte) (se shared.SubsetEvent, err error) {
 			"next_sequence_recv":                    {strconv.FormatUint(m.NextSequenceRecv, 10)},
 		},
 	}
-	err = util.ParsePacket(m.Packet.Data, &event)
+	err = ParsePacket(m.Packet.Data, &event)
 	return event, err
 }
 
@@ -295,6 +299,49 @@ func IBCChannelAcknowledgementToSub(msg []byte) (se shared.SubsetEvent, err erro
 			"proof_height_revision_height":          {strconv.FormatUint(m.ProofHeight.RevisionHeight, 10)},
 		},
 	}
-	err = util.ParsePacket(m.Packet.Data, &event)
+	err = ParsePacket(m.Packet.Data, &event)
 	return event, err
+}
+
+type PacketData struct {
+	Amount   string `json:"amount"`
+	Denom    string `json:"denom"`
+	Receiver string `json:"receiver"`
+	Sender   string `json:"sender"`
+}
+
+func ParsePacket(data []byte, event *structs.SubsetEvent) error {
+	// types.FungibleTokenPacketData for ibc v1 uses a number for Amount.
+	// the data has the Amount as a string..  So a custom PacketData is used.
+	var packetData *PacketData
+	err := json.Unmarshal(data, &packetData)
+	if err != nil {
+		return fmt.Errorf("packet malformed: %w %s", err, string(data))
+	}
+	amt, ok := new(big.Int).SetString(packetData.Amount, 10)
+	if !ok {
+		return fmt.Errorf("packet amount not a string: %v", packetData)
+	}
+	if amt.Cmp(bigZero) < 0 || len(packetData.Denom) == 0 || len(packetData.Sender) == 0 || len(packetData.Receiver) == 0 {
+		return fmt.Errorf("packet malformed: %v", packetData)
+	}
+	// adding the Amount on the receiver.
+	event.Sender = []structs.EventTransfer{
+		{
+			Account: structs.Account{ID: packetData.Sender},
+		},
+	}
+	event.Recipient = []structs.EventTransfer{
+		{
+			Account: structs.Account{ID: packetData.Receiver},
+			Amounts: []structs.TransactionAmount{
+				{
+					Text:     amt.String(),
+					Numeric:  amt,
+					Currency: packetData.Denom,
+				},
+			},
+		},
+	}
+	return nil
 }
