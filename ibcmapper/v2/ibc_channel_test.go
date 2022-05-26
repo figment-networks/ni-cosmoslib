@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	channel "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
-	"github.com/figment-networks/ni-cosmoslib/api/util"
 )
 
 func TestIBCChannelRecvPacketToSub(t *testing.T) {
 
-	packetData := &util.PacketData{
+	packetData := &types.FungibleTokenPacketData{
 		Receiver: "receiver",
 		Sender:   "sender",
 		Amount:   "1",

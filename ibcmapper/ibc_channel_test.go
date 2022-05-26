@@ -5,12 +5,11 @@ import (
 	"testing"
 
 	channel "github.com/cosmos/ibc-go/modules/core/04-channel/types"
-	"github.com/figment-networks/ni-cosmoslib/api/util"
 )
 
 func TestIBCChannelRecvPacketToSub(t *testing.T) {
 
-	packetData := &util.PacketData{
+	packetData := &PacketData{
 		Receiver: "receiver",
 		Sender:   "sender",
 		Amount:   "1",
