@@ -17,9 +17,20 @@ import (
 )
 
 type Mapper struct {
-	Logger          *zap.Logger
-	DefaultCurrency string
+	Logger              *zap.Logger
+	DefaultCurrency     string
+	BondedTokensPool    string
+	NotBondedTokensPool string
 }
+
+// osmo BondedTokensPool    (delegate) osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09    https://www.mintscan.io/osmosis/txs/29039372E1308EFC7118B83E53BB88B03D7A877A200829150CA27338F77C405B
+// osmo NotBondedTokensPool (undelegate) osmo1tygms3xhhs3yv487phx3dw4a95jn7t7lfqxwe3  https://www.mintscan.io/osmosis/txs/D7BF9ECFF1135B7D088EC8DE2685F98248924F66EF8083E97E076A2BA1C51420
+
+// cosmos BondedTokensPool (delegate)      "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh" https://www.mintscan.io/cosmos/txs/39AA4A671D9436878000C64EFC6E12527EFE412A84A2A347BAB591C0415D4966
+// cosmos NotBondedTokensPool (undelegate) "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r" https://www.mintscan.io/cosmos/txs/8AFC27C7DEC448DE0DFD9E419C11269601401A10CB054C6BB3BE4C1A45CE9C5D
+
+// kava BondedTokensPool (delegate) "kava1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3fwaj0s"       https://www.mintscan.io/kava/txs/17B3C52FB4F876EC53FB18B4B2592F47B2CFB81BDD76E375F166036FB9DE59AA
+// kava NotBondedTokensPool (undelegate) "kava1tygms3xhhs3yv487phx3dw4a95jn7t7lawprey"  https://www.mintscan.io/kava/txs/B06C50A36FB3F01584F190FB68BA28FF9C3CCC2E286CBDDECFBD5A6D3DD7C1A6
 
 var currencyRegexp = regexp.MustCompile(`^\d+$`)
 
@@ -28,7 +39,7 @@ var currencyRegexp = regexp.MustCompile(`^\d+$`)
 // withdraw validator commision -> validator rewards
 
 // ValidatorFromTx maps the resolved `ValidatorSrc` and `ValidatorDst` from processing `ParseRewardEvent` into a common function
-func ValidatorFromTx(tx *rewstruct.Tx) string {
+func ValidatorFromTx(tx *rewstruct.RewardTx) string {
 	var validator string
 	switch tx.Type {
 	case "MsgWithdrawDelegatorReward":
@@ -101,9 +112,7 @@ func (m *Mapper) MsgWithdrawValidatorCommission(msg []byte, lg types.ABCIMessage
 				}
 				rev.Amounts = append(rev.Amounts, am...)
 			}
-
-		} else {
-			continue
+			break
 		}
 	}
 
@@ -123,38 +132,31 @@ func (m *Mapper) MsgWithdrawDelegatorReward(msg []byte, lg types.ABCIMessageLog)
 		ValidatorSrc: wvc.ValidatorAddress,
 	}
 
-	for _, e := range []string{"coin_received"} {
-		for _, ev := range lg.GetEvents() {
-			if e == ev.GetType() {
-				switch ev.GetType() {
-
-				case "coin_received":
-					parsed, err := m.groupRSEvents(lg.GetEvents())
-					if err != nil {
-						return rev, err
-					}
-					for _, p := range parsed {
-
-						am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
-						if err != nil {
-							return rev, err
-						}
-						reward := &rewstruct.RewardAmount{
-							Amounts:   am,
-							Validator: wvc.ValidatorAddress,
-						}
-						if wvc.DelegatorAddress != p["receiver"] {
-							rev.RewardRecipient = p["receiver"]
-						}
-						rev.Rewards = append(rev.Rewards, reward)
-					}
-				}
-			} else {
-				continue
+	for _, ev := range lg.GetEvents() {
+		if ev.GetType() == "coin_received" {
+			parsed, err := m.groupRSEvents(lg.GetEvents())
+			if err != nil {
+				return rev, err
 			}
+			for _, p := range parsed {
 
+				am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
+				if err != nil {
+					return rev, err
+				}
+				reward := &rewstruct.RewardAmount{
+					Amounts:   am,
+					Validator: wvc.ValidatorAddress,
+				}
+				if wvc.DelegatorAddress != p["receiver"] {
+					rev.RewardRecipient = p["receiver"]
+				}
+				rev.Rewards = append(rev.Rewards, reward)
+			}
 		}
+		break
 	}
+
 	return rev, nil
 }
 
@@ -171,8 +173,8 @@ func (m *Mapper) MsgUndelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstr
 		ValidatorSrc: wvc.ValidatorAddress,
 	}
 
-	unDelegateAmount := ""
 	for _, e := range []string{"unbond", "coin_received"} {
+	innerLoop:
 		for _, ev := range lg.GetEvents() {
 			if e == ev.GetType() {
 				switch ev.GetType() {
@@ -182,20 +184,20 @@ func (m *Mapper) MsgUndelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstr
 						return rev, err
 					}
 					if val, ok := parsed[0]["amount"]; ok {
-						unDelegateAmount = parsed[0]["amount"]
 						am, err := fAmounts(m.DefaultCurrency, strings.Split(val, ","))
 						if err != nil {
 							return rev, err
 						}
 						rev.Amounts = append(rev.Amounts, am...)
 					}
+					break innerLoop
 				case "coin_received":
 					parsed, err := m.groupRSEvents(lg.GetEvents())
 					if err != nil {
 						return rev, err
 					}
 					for _, p := range parsed {
-						if p["amount"] == unDelegateAmount {
+						if m.NotBondedTokensPool != "" && p["receiver"] == m.NotBondedTokensPool {
 							continue
 						}
 						am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
@@ -211,11 +213,9 @@ func (m *Mapper) MsgUndelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstr
 						}
 						rev.Rewards = append(rev.Rewards, reward)
 					}
+					break innerLoop
 				}
-			} else {
-				continue
 			}
-
 		}
 	}
 
@@ -235,8 +235,8 @@ func (m *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruc
 		ValidatorDst: wvc.ValidatorAddress,
 	}
 
-	delegateAmount := ""
 	for _, e := range []string{"delegate", "coin_received"} {
+	innerLoop:
 		for _, ev := range lg.GetEvents() {
 			if e == ev.GetType() {
 				switch ev.GetType() {
@@ -246,20 +246,20 @@ func (m *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruc
 						return rev, err
 					}
 					if val, ok := parsed[0]["amount"]; ok {
-						delegateAmount = parsed[0]["amount"]
 						am, err := fAmounts(m.DefaultCurrency, strings.Split(val, ","))
 						if err != nil {
 							return rev, err
 						}
 						rev.Amounts = append(rev.Amounts, am...)
 					}
+					break innerLoop
 				case "coin_received":
 					parsed, err := m.groupRSEvents(lg.GetEvents())
 					if err != nil {
 						return rev, err
 					}
 					for _, p := range parsed {
-						if p["amount"] == delegateAmount {
+						if m.BondedTokensPool != "" && p["receiver"] == m.BondedTokensPool {
 							continue
 						}
 						am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
@@ -275,11 +275,9 @@ func (m *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruc
 						}
 						rev.Rewards = append(rev.Rewards, reward)
 					}
+					break innerLoop
 				}
-			} else {
-				continue
 			}
-
 		}
 	}
 
@@ -299,8 +297,8 @@ func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 		ValidatorDst: wvc.ValidatorDstAddress,
 		Delegator:    wvc.DelegatorAddress,
 	}
-	var redelegateAmount string
 	for _, e := range []string{"redelegate", "coin_received"} {
+	innerLoop:
 		for _, ev := range lg.GetEvents() {
 			if e == ev.GetType() {
 				switch ev.GetType() {
@@ -310,22 +308,19 @@ func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 						return rev, err
 					}
 					if val, ok := parsed[0]["amount"]; ok {
-						redelegateAmount = parsed[0]["amount"]
 						am, err := fAmounts(m.DefaultCurrency, strings.Split(val, ","))
 						if err != nil {
 							return rev, err
 						}
 						rev.Amounts = append(rev.Amounts, am...)
 					}
+					break innerLoop
 				case "coin_received":
 					parsed, err := m.groupRSEvents(lg.GetEvents())
 					if err != nil {
 						return rev, err
 					}
 					for i, p := range parsed {
-						if redelegateAmount == p["amount"] {
-							continue
-						}
 						am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
 						if err != nil {
 							return rev, err
@@ -346,11 +341,9 @@ func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 						}
 						rev.Rewards = append(rev.Rewards, reward)
 					}
+					break innerLoop
 				}
-			} else {
-				continue
 			}
-
 		}
 	}
 
@@ -479,7 +472,6 @@ func (m *Mapper) eventsFilter(ev types.StringEvent) (result []types.Attribute, e
 				result = append(result, localAttr)
 				m.Logger.Debug("event", zap.String("type", etype), zap.Any("content", v))
 			}
-			continue
 		}
 	}
 
@@ -514,6 +506,9 @@ func (m *Mapper) groupEvents(ev types.StringEvent) (result []map[string]string, 
 		}
 
 		result = append(result, emap)
+	}
+	if len(result) == 0 {
+		return result, fmt.Errorf("missing events type: %s", etype)
 	}
 
 	return result, nil

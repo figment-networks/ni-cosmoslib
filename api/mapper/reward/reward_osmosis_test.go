@@ -63,8 +63,10 @@ func TestMapper_MsgDelegate_Osmosis(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Mapper{
-				Logger:          zaptest.NewLogger(t),
-				DefaultCurrency: "uosmo",
+				Logger:              zaptest.NewLogger(t),
+				DefaultCurrency:     "uosmo",
+				BondedTokensPool:    "osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09",
+				NotBondedTokensPool: "osmo1tygms3xhhs3yv487phx3dw4a95jn7t7lfqxwe3",
 			}
 			gotRev, err := m.MsgDelegate(tt.args.msg, tt.args.lg)
 			if (err != nil) != tt.wantErr {
@@ -143,8 +145,10 @@ func TestMapper_MsgBeginRedelegate_Osmosis(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Mapper{
-				Logger:          zaptest.NewLogger(t),
-				DefaultCurrency: "uosmo",
+				Logger:              zaptest.NewLogger(t),
+				DefaultCurrency:     "uosmo",
+				BondedTokensPool:    "osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09",
+				NotBondedTokensPool: "osmo1tygms3xhhs3yv487phx3dw4a95jn7t7lfqxwe3",
 			}
 			gotRev, err := m.MsgBeginRedelegate(tt.args.msg, tt.args.lg)
 			if (err != nil) != tt.wantErr {
@@ -218,8 +222,10 @@ func TestMapper_MsgWithdrawDelegatorReward_Osmosis(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Mapper{
-				Logger:          zaptest.NewLogger(t),
-				DefaultCurrency: "uosmo",
+				Logger:              zaptest.NewLogger(t),
+				DefaultCurrency:     "uosmo",
+				BondedTokensPool:    "osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09",
+				NotBondedTokensPool: "osmo1tygms3xhhs3yv487phx3dw4a95jn7t7lfqxwe3",
 			}
 			gotRev, err := m.MsgWithdrawDelegatorReward(tt.args.msg, tt.args.lg)
 			if (err != nil) != tt.wantErr {
@@ -268,8 +274,10 @@ func TestMapper_MsgUndelegate_Osmosis(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Mapper{
-				Logger:          zaptest.NewLogger(t),
-				DefaultCurrency: "uosmo",
+				Logger:              zaptest.NewLogger(t),
+				DefaultCurrency:     "uosmo",
+				BondedTokensPool:    "osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09",
+				NotBondedTokensPool: "osmo1tygms3xhhs3yv487phx3dw4a95jn7t7lfqxwe3",
 			}
 			gotRev, err := m.MsgUndelegate(tt.args.msg, tt.args.lg)
 			if (err != nil) != tt.wantErr {
