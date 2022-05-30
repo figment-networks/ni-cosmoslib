@@ -76,9 +76,9 @@ type DelegatorValidator struct {
 }
 
 type RewardProducer interface {
-	GetRewards(*rewstruct.Tx) []structs.ClaimedReward
-	GetDelegations(tx *rewstruct.Tx) (accounts []DelegatorValidator)
-	MapTransactions(txs []*tx.Tx, txResponses []*types.TxResponse, t time.Time) (retTxs *rewstruct.Txs, err error)
+	GetRewards(*rewstruct.RewardTx) []structs.ClaimedReward
+	GetDelegations(tx *rewstruct.RewardTx) (accounts []DelegatorValidator)
+	MapTransactions(txs []*tx.Tx, txResponses []*types.TxResponse, t time.Time) (retTxs *rewstruct.RewardTxs, err error)
 }
 
 type Client interface {
@@ -553,7 +553,7 @@ func (re *RewardsExtraction) fetchTransactions(ctx context.Context, rp RewardPro
 			// this means record it present but it's empty so we don't process it
 			continue
 		}
-		txs := &rewstruct.Txs{}
+		txs := &rewstruct.RewardTxs{}
 		if err = proto.Unmarshal(drp.Content, txs); err != nil {
 			return nil, nil, err
 		}
