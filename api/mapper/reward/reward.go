@@ -149,7 +149,7 @@ func (m *Mapper) MsgWithdrawDelegatorReward(msg []byte, lg types.ABCIMessageLog)
 					Validator: wvc.ValidatorAddress,
 				}
 				if wvc.DelegatorAddress != p["receiver"] {
-					rev.RewardRecipient = p["receiver"]
+					rev.RewardRecipients = append(rev.RewardRecipients, p["receiver"])
 				}
 				rev.Rewards = append(rev.Rewards, reward)
 			}
@@ -209,7 +209,7 @@ func (m *Mapper) MsgUndelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstr
 							Validator: wvc.ValidatorAddress,
 						}
 						if wvc.DelegatorAddress != p["receiver"] {
-							rev.RewardRecipient = p["receiver"]
+							rev.RewardRecipients = append(rev.RewardRecipients, p["receiver"])
 						}
 						rev.Rewards = append(rev.Rewards, reward)
 					}
@@ -271,7 +271,7 @@ func (m *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruc
 							Validator: wvc.ValidatorAddress,
 						}
 						if wvc.DelegatorAddress != p["receiver"] {
-							rev.RewardRecipient = p["receiver"]
+							rev.RewardRecipients = append(rev.RewardRecipients, p["receiver"])
 						}
 						rev.Rewards = append(rev.Rewards, reward)
 					}
@@ -337,7 +337,7 @@ func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 							reward.Validator = wvc.ValidatorDstAddress
 						}
 						if wvc.DelegatorAddress != p["receiver"] {
-							rev.RewardRecipient = p["receiver"]
+							rev.RewardRecipients = append(rev.RewardRecipients, p["receiver"])
 						}
 						rev.Rewards = append(rev.Rewards, reward)
 					}
@@ -389,9 +389,9 @@ func (m *Mapper) MsgSetWithdrawAddress(msg []byte, lg types.ABCIMessageLog) (rev
 	}
 
 	rev = &rewstruct.RewardTx{
-		Type:            "MsgSetWithdrawAddress",
-		Delegator:       wvc.DelegatorAddress,
-		RewardRecipient: wvc.WithdrawAddress,
+		Type:             "MsgSetWithdrawAddress",
+		Delegator:        wvc.DelegatorAddress,
+		RewardRecipients: []string{wvc.WithdrawAddress},
 	}
 
 	return rev, nil

@@ -196,9 +196,9 @@ func TestMapper_MsgSetWithdrawAddress_Cosmos(t *testing.T) {
 				},
 			},
 			wantRev: &rewstruct.RewardTx{
-				Type:            "MsgSetWithdrawAddress",
-				Delegator:       "cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd",
-				RewardRecipient: "cosmos1z8wrnv35mmezpseym0jy7lngvsan2alwn8gma9",
+				Type:             "MsgSetWithdrawAddress",
+				Delegator:        "cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd",
+				RewardRecipients: []string{"cosmos1z8wrnv35mmezpseym0jy7lngvsan2alwn8gma9"},
 			},
 		},
 		// TODO: Add test cases.
@@ -269,12 +269,12 @@ func TestMapper_MsgUndelegate_Cosmos(t *testing.T) {
 				},
 			},
 			wantRev: &rewstruct.RewardTx{
-				Type:            "MsgUndelegate",
-				ValidatorSrc:    "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3",
-				Delegator:       "cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf",
-				Amounts:         []*rewstruct.Amount{{Text: "200000000uatom", Currency: "uatom", Numeric: []byte("\x0b\xeb\xc2\x00")}},
-				Rewards:         []*rewstruct.RewardAmount{{Amounts: []*rewstruct.Amount{{Text: "11628006uatom", Currency: "uatom", Numeric: []byte("\xb1m\xe6")}}, Validator: "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3"}},
-				RewardRecipient: "cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd",
+				Type:             "MsgUndelegate",
+				ValidatorSrc:     "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3",
+				Delegator:        "cosmos1q7h3kuuvnzd3fq4snhls543uvv8stt9em0nmkf",
+				Amounts:          []*rewstruct.Amount{{Text: "200000000uatom", Currency: "uatom", Numeric: []byte("\x0b\xeb\xc2\x00")}},
+				Rewards:          []*rewstruct.RewardAmount{{Amounts: []*rewstruct.Amount{{Text: "11628006uatom", Currency: "uatom", Numeric: []byte("\xb1m\xe6")}}, Validator: "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3"}},
+				RewardRecipients: []string{"cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd"},
 			},
 		},
 		//TODO: Add test cases.

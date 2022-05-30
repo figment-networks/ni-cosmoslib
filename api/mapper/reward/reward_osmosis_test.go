@@ -209,11 +209,11 @@ func TestMapper_MsgWithdrawDelegatorReward_Osmosis(t *testing.T) {
 				},
 			},
 			wantRev: &rewstruct.RewardTx{
-				Type:            "MsgWithdrawDelegatorReward",
-				Delegator:       "osmo1udv3dqftlrkc5yxqn9tnu7atyg8wnl4e4wm84a",
-				ValidatorSrc:    "osmovaloper1thsw3n94lzxy0knhss9n554zqp4dnfzx78j7sq",
-				Rewards:         []*rewstruct.RewardAmount{{Amounts: []*rewstruct.Amount{{Text: "1647849uosmo", Currency: "uosmo", Numeric: []byte("\x19$\xe9")}}, Validator: "osmovaloper1thsw3n94lzxy0knhss9n554zqp4dnfzx78j7sq"}},
-				RewardRecipient: "osmo153geppn7520n2kvsl850wxkz5r576n3wxnj0yj",
+				Type:             "MsgWithdrawDelegatorReward",
+				Delegator:        "osmo1udv3dqftlrkc5yxqn9tnu7atyg8wnl4e4wm84a",
+				ValidatorSrc:     "osmovaloper1thsw3n94lzxy0knhss9n554zqp4dnfzx78j7sq",
+				Rewards:          []*rewstruct.RewardAmount{{Amounts: []*rewstruct.Amount{{Text: "1647849uosmo", Currency: "uosmo", Numeric: []byte("\x19$\xe9")}}, Validator: "osmovaloper1thsw3n94lzxy0knhss9n554zqp4dnfzx78j7sq"}},
+				RewardRecipients: []string{"osmo153geppn7520n2kvsl850wxkz5r576n3wxnj0yj"},
 			},
 		},
 		// TODO: Add test cases.
