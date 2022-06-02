@@ -142,7 +142,6 @@ func (re *RewardsExtraction) FetchHeights(ctx context.Context, startHeight, endH
 
 FETCH_HEIGHTS_LOOP:
 	for height := startHeight; height < endHeight+1; height++ {
-
 		block, _, err := re.client.GetBlock(ctx, height)
 		if err != nil {
 			h.ErrorAt = append(h.ErrorAt, height)
