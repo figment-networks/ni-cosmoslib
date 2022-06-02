@@ -18,16 +18,11 @@ import (
 	"github.com/figment-networks/ni-cosmoslib/client/cosmosgrpc"
 )
 
-type Client interface {
-	GetDelegations(ctx context.Context, height uint64, delegatorAddress string) (dels []cosmosgrpc.Delegators, err error)
-}
-
 type Mapper struct {
 	Logger              *zap.Logger
 	DefaultCurrency     string
 	BondedTokensPool    string
 	NotBondedTokensPool string
-	Client              Client
 }
 
 // osmo BondedTokensPool    (delegate) osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09    https://www.mintscan.io/osmosis/txs/29039372E1308EFC7118B83E53BB88B03D7A877A200829150CA27338F77C405B
@@ -83,15 +78,7 @@ func ParseRewardEvent(ctx context.Context, height uint64, module, msgType string
 		case "MsgDelegate":
 			return ma.MsgDelegate(raw, lg)
 		case "MsgBeginRedelegate":
-			retx, err := ma.MsgBeginRedelegate(raw, lg)
-			if err != nil {
-				return nil, err
-			}
-			dels, err := ma.Client.GetDelegations(ctx, height-1, retx.Delegator)
-			if err != nil {
-				return nil, err
-			}
-			return ma.PostMsgBeginRedelegate(retx, dels)
+			return ma.MsgBeginRedelegate(raw, lg)
 		case "MsgEditValidator":
 			return ma.MsgEditValidator(raw, lg)
 		case "MsgCreateValidator":
