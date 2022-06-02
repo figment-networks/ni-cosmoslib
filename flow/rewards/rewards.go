@@ -160,8 +160,8 @@ FETCH_HEIGHTS_LOOP:
 		}
 
 		// If we are at max height set a future crossingHeights
+		// this will allow us to fetch the final claimed rewards (if any) on this chain.
 		if re.Cfg.MaxChainHeight != 0 && height == re.Cfg.MaxChainHeight {
-			// for the max height set a sequence to fetch the remainder (if any) claimed rewards
 			crossingHeights = append(crossingHeights, &Crossing{
 				Height:   height,
 				Sequence: sequence + 1,
