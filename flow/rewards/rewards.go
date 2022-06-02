@@ -143,38 +143,32 @@ func (re *RewardsExtraction) FetchHeights(ctx context.Context, startHeight, endH
 FETCH_HEIGHTS_LOOP:
 	for height := startHeight; height < endHeight+1; height++ {
 
-		var blockHeaderTime time.Time
-
-		// at MaxChainHeight, stop processing
-		if re.Cfg.MaxChainHeight != 0 && height == re.Cfg.MaxChainHeight {
-			// for the max height set a sequence to fetch the remainder (if any) claimed rewards
-			sequence++
-			crossingHeights = append(crossingHeights, &Crossing{
-				Height:   height,
-				Sequence: sequence,
-			})
-			// set a "fake" block header time at the next grouping
-			blockHeaderTime = time.Unix(int64(sequence*3600), 0)
-		} else {
-			block, _, err := re.client.GetBlock(ctx, height)
-			if err != nil {
-				h.ErrorAt = append(h.ErrorAt, height)
-				gErr = err
-				break FETCH_HEIGHTS_LOOP
-			}
-
-			timeID := uint64(math.Floor(float64(block.Header.Time.Truncate(time.Hour).Unix()) / 3600))
-			if sequence != timeID {
-				crossingHeights = append(crossingHeights, &Crossing{
-					Height:   height,
-					Sequence: timeID,
-				})
-				sequence = timeID
-			}
-			blockHeaderTime = block.Header.Time
+		block, _, err := re.client.GetBlock(ctx, height)
+		if err != nil {
+			h.ErrorAt = append(h.ErrorAt, height)
+			gErr = err
+			break FETCH_HEIGHTS_LOOP
 		}
 
-		ht := HeightTime{Height: height, Time: blockHeaderTime}
+		timeID := uint64(math.Floor(float64(block.Header.Time.Truncate(time.Hour).Unix()) / 3600))
+		if sequence != timeID {
+			crossingHeights = append(crossingHeights, &Crossing{
+				Height:   height,
+				Sequence: timeID,
+			})
+			sequence = timeID
+		}
+
+		// If we are at max height set a future crossingHeights
+		if re.Cfg.MaxChainHeight != 0 && height == re.Cfg.MaxChainHeight {
+			// for the max height set a sequence to fetch the remainder (if any) claimed rewards
+			crossingHeights = append(crossingHeights, &Crossing{
+				Height:   height,
+				Sequence: sequence + 1,
+			})
+		}
+
+		ht := HeightTime{Height: height, Time: block.Header.Time}
 		select {
 		case heights <- ht:
 		case r := <-resp:
