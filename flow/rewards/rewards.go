@@ -97,6 +97,7 @@ type RewardsExtractionConfig struct {
 	DatastorePrefix    string
 	ChainID            string
 	Network            string
+	MaxChainHeight     uint64
 }
 
 type RewardsExtraction struct {
@@ -141,23 +142,39 @@ func (re *RewardsExtraction) FetchHeights(ctx context.Context, startHeight, endH
 
 FETCH_HEIGHTS_LOOP:
 	for height := startHeight; height < endHeight+1; height++ {
-		block, _, err := re.client.GetBlock(ctx, height)
-		if err != nil {
-			h.ErrorAt = append(h.ErrorAt, height)
-			gErr = err
-			break FETCH_HEIGHTS_LOOP
-		}
 
-		timeID := uint64(math.Floor(float64(block.Header.Time.Truncate(time.Hour).Unix()) / 3600))
-		if sequence != timeID {
+		var blockHeaderTime time.Time
+
+		// at MaxChainHeight, stop processing
+		if re.Cfg.MaxChainHeight != 0 && height == re.Cfg.MaxChainHeight {
+			// for the max height set a sequence to fetch the remainder (if any) claimed rewards
+			sequence++
 			crossingHeights = append(crossingHeights, &Crossing{
 				Height:   height,
-				Sequence: timeID,
+				Sequence: sequence,
 			})
-			sequence = timeID
+			// set a "fake" block header time at the next grouping
+			blockHeaderTime = time.Unix(int64(sequence*3600), 0)
+		} else {
+			block, _, err := re.client.GetBlock(ctx, height)
+			if err != nil {
+				h.ErrorAt = append(h.ErrorAt, height)
+				gErr = err
+				break FETCH_HEIGHTS_LOOP
+			}
+
+			timeID := uint64(math.Floor(float64(block.Header.Time.Truncate(time.Hour).Unix()) / 3600))
+			if sequence != timeID {
+				crossingHeights = append(crossingHeights, &Crossing{
+					Height:   height,
+					Sequence: timeID,
+				})
+				sequence = timeID
+			}
+			blockHeaderTime = block.Header.Time
 		}
 
-		ht := HeightTime{Height: height, Time: block.Header.Time}
+		ht := HeightTime{Height: height, Time: blockHeaderTime}
 		select {
 		case heights <- ht:
 		case r := <-resp:
