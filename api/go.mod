@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/cosmos/cosmos-sdk v0.45.4
 	github.com/figment-networks/indexing-engine v0.9.19
+	github.com/figment-networks/ni-cosmoslib/client v0.1.2
 	github.com/gogo/protobuf v1.3.3
 	github.com/gravity-devs/liquidity v1.4.2
 	go.uber.org/zap v1.19.1
@@ -101,6 +102,7 @@ require (
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
 	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	google.golang.org/genproto v0.0.0-20211223182754-3ac035c7e7cb // indirect
 	google.golang.org/grpc v1.45.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect

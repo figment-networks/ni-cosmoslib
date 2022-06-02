@@ -1,11 +1,13 @@
 package reward
 
 import (
+	"math/big"
 	"reflect"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/figment-networks/indexing-engine/proto/rewstruct"
+	"github.com/figment-networks/ni-cosmoslib/client/cosmosgrpc"
 	"go.uber.org/zap/zaptest"
 )
 
@@ -118,7 +120,24 @@ func TestMapper_MsgBeginRedelegate_Cosmos(t *testing.T) {
 				t.Errorf("Mapper.MsgBeginRedelegate() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotRev, tt.wantRev) {
+			postGotRev, err := m.PostMsgBeginRedelegate(gotRev, []cosmosgrpc.Delegators{
+				{
+					DelegatorAddress: tt.wantRev.Delegator,
+					Unclaimed: []cosmosgrpc.DelegatorsUnclaimed{{
+						ValidatorAddress: tt.wantRev.ValidatorSrc,
+						Unclaimed: []cosmosgrpc.TransactionAmount{{
+							Currency: "uatom",
+							Numeric:  big.NewInt(0).SetBytes(tt.wantRev.Rewards[0].Amounts[0].Numeric),
+							Exp:      0,
+						}},
+					}},
+				},
+			})
+			if err != nil {
+				t.Errorf("Mapper.PostMsgBeginRedelegate() error = %v", err)
+				return
+			}
+			if !reflect.DeepEqual(postGotRev, tt.wantRev) {
 				t.Errorf("Mapper.MsgBeginRedelegate() = %v, want %v", gotRev, tt.wantRev)
 			}
 		})

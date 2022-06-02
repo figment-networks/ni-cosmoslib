@@ -1,6 +1,7 @@
 package reward
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 	"regexp"
@@ -14,13 +15,19 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/figment-networks/ni-cosmoslib/api/util"
+	"github.com/figment-networks/ni-cosmoslib/client/cosmosgrpc"
 )
+
+type Client interface {
+	GetDelegations(ctx context.Context, height uint64, delegatorAddress string) (dels []cosmosgrpc.Delegators, err error)
+}
 
 type Mapper struct {
 	Logger              *zap.Logger
 	DefaultCurrency     string
 	BondedTokensPool    string
 	NotBondedTokensPool string
+	Client              Client
 }
 
 // osmo BondedTokensPool    (delegate) osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09    https://www.mintscan.io/osmosis/txs/29039372E1308EFC7118B83E53BB88B03D7A877A200829150CA27338F77C405B
@@ -55,7 +62,7 @@ func ValidatorFromTx(tx *rewstruct.RewardTx) string {
 }
 
 // ParseRewardEvent converts a cosmos event from the log to a Subevent type and adds it to the provided RewardEvent struct
-func ParseRewardEvent(module, msgType string, raw []byte, lg types.ABCIMessageLog, ma *Mapper) (rev *rewstruct.RewardTx, err error) {
+func ParseRewardEvent(ctx context.Context, height uint64, module, msgType string, raw []byte, lg types.ABCIMessageLog, ma *Mapper) (rev *rewstruct.RewardTx, err error) {
 
 	switch module {
 	case "distribution":
@@ -76,7 +83,15 @@ func ParseRewardEvent(module, msgType string, raw []byte, lg types.ABCIMessageLo
 		case "MsgDelegate":
 			return ma.MsgDelegate(raw, lg)
 		case "MsgBeginRedelegate":
-			return ma.MsgBeginRedelegate(raw, lg)
+			retx, err := ma.MsgBeginRedelegate(raw, lg)
+			if err != nil {
+				return nil, err
+			}
+			dels, err := ma.Client.GetDelegations(ctx, height-1, retx.Delegator)
+			if err != nil {
+				return nil, err
+			}
+			return ma.PostMsgBeginRedelegate(retx, dels)
 		case "MsgEditValidator":
 			return ma.MsgEditValidator(raw, lg)
 		case "MsgCreateValidator":
@@ -344,6 +359,73 @@ func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 					break innerLoop
 				}
 			}
+		}
+	}
+
+	return rev, nil
+}
+
+func toDec(numeric *big.Int, exp int32) types.Dec {
+	if exp < 0 {
+		return types.NewDecFromBigIntWithPrec(numeric, int64(-1*exp))
+	}
+	powerTen := big.NewInt(10)
+	powerTen = powerTen.Exp(powerTen, big.NewInt(int64(exp)), nil)
+	return types.NewDecFromBigIntWithPrec(powerTen.Mul(numeric, powerTen), 0)
+}
+
+// PostMsgBeginRedelegate takes a parsed RewardTx and establishes which
+// validator should be assigned to which reward given the height - 1 reward balances (dels)
+func (m *Mapper) PostMsgBeginRedelegate(rev *rewstruct.RewardTx, dels []cosmosgrpc.Delegators) (*rewstruct.RewardTx, error) {
+	for _, rew := range rev.Rewards {
+		srcDelta, srcExists := types.NewDec(0), false
+		dstDelta, dstExists := types.NewDec(0), false
+
+		for _, del := range dels {
+			for _, unc := range del.Unclaimed {
+				// assumption: every reward amount should exist
+				// in dels (height - 1) if there was a claim,
+				// so we can just check the first amount to
+				// establish which validator the reward belongs
+				// to.
+				for _, amt := range unc.Unclaimed {
+					if amt.Currency != rew.Amounts[0].Currency {
+						continue
+					}
+
+					if rev.ValidatorSrc == unc.ValidatorAddress {
+						ra := toDec(big.NewInt(0).SetBytes(rew.Amounts[0].Numeric), rew.Amounts[0].Exp)
+						ua := toDec(amt.Numeric, amt.Exp)
+						srcDelta = ra.Sub(ua)
+						srcExists = true
+						break
+					}
+
+					if rev.ValidatorDst == unc.ValidatorAddress {
+						ra := toDec(big.NewInt(0).SetBytes(rew.Amounts[0].Numeric), rew.Amounts[0].Exp)
+						ua := toDec(amt.Numeric, amt.Exp)
+						dstDelta = ra.Sub(ua)
+						dstExists = true
+						break
+					}
+				}
+			}
+		}
+
+		if !srcExists {
+			rew.Validator = rev.ValidatorDst
+			continue
+		}
+
+		if !dstExists {
+			rew.Validator = rev.ValidatorSrc
+			continue
+		}
+
+		if srcDelta.LTE(dstDelta) {
+			rew.Validator = rev.ValidatorSrc
+		} else {
+			rew.Validator = rev.ValidatorDst
 		}
 	}
 
