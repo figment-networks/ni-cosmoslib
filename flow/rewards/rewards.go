@@ -57,6 +57,7 @@ type HeightTime struct {
 
 type HeightError struct {
 	Height uint64
+	Time   time.Time
 	Error  error
 }
 
@@ -169,6 +170,7 @@ FETCH_HEIGHTS_LOOP:
 			}
 			h.Heights = append(h.Heights, r.Height)
 			if h.LatestData.LastHeight < r.Height {
+				h.LatestData.LastTime = r.Time
 				h.LatestData.LastHeight = r.Height
 				h.LatestData.LastMark = r.Height
 			}
@@ -190,6 +192,7 @@ FETCH_HEIGHTS_LOOP:
 			} else {
 				h.Heights = append(h.Heights, r.Height)
 				if h.LatestData.LastHeight < r.Height {
+					h.LatestData.LastTime = r.Time
 					h.LatestData.LastHeight = r.Height
 					h.LatestData.LastMark = r.Height
 				}
@@ -407,7 +410,7 @@ func (re *RewardsExtraction) fetchHeightData(ctx context.Context, heights chan H
 			}
 			*/
 
-			r := HeightError{Height: height.Height}
+			r := HeightError{Height: height.Height, Time: height.Time}
 
 			rawTxs, rewTxResps, err := re.client.GetRawTxs(ctx, height.Height, 100)
 			if err != nil {
