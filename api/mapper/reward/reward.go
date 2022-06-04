@@ -14,8 +14,9 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"go.uber.org/zap"
 
-	"github.com/figment-networks/ni-cosmoslib/api/util"
 	"github.com/figment-networks/ni-cosmoslib/client/cosmosgrpc"
+
+	"github.com/figment-networks/ni-cosmoslib/api/util"
 )
 
 type Client interface {
@@ -377,7 +378,14 @@ func toDec(numeric *big.Int, exp int32) types.Dec {
 // PostMsgBeginRedelegate takes a parsed RewardTx and establishes which
 // validator should be assigned to which reward given the height - 1 reward balances (dels)
 func (m *Mapper) PostMsgBeginRedelegate(rev *rewstruct.RewardTx, dels []cosmosgrpc.Delegators) (*rewstruct.RewardTx, error) {
+	// usedValidators to keep track if we used the validator
+	usedValidators := make(map[string]struct{})
+
+	// to keep track of the real rewards
+	temp := rev.Rewards[:0]
 	for _, rew := range rev.Rewards {
+		// identify they key for the reward
+		var srckey, dstkey string
 		srcDelta, srcExists := types.NewDec(0), false
 		dstDelta, dstExists := types.NewDec(0), false
 
@@ -393,42 +401,67 @@ func (m *Mapper) PostMsgBeginRedelegate(rev *rewstruct.RewardTx, dels []cosmosgr
 						continue
 					}
 
-					if rev.ValidatorSrc == unc.ValidatorAddress {
+					// if we already used once, we cannot use it again.
+					key := fmt.Sprintf("%s:%s", unc.ValidatorAddress, amt.Numeric.String())
+					if _, ok := usedValidators[key]; ok {
+						continue
+					}
+
+					ra := toDec(big.NewInt(0).SetBytes(rew.Amounts[0].Numeric), rew.Amounts[0].Exp)
+					ua := toDec(amt.Numeric, amt.Exp)
+
+					if rev.ValidatorSrc == unc.ValidatorAddress && ua.GTE(ra) {
 						ra := toDec(big.NewInt(0).SetBytes(rew.Amounts[0].Numeric), rew.Amounts[0].Exp)
 						ua := toDec(amt.Numeric, amt.Exp)
 						srcDelta = ra.Sub(ua)
 						srcExists = true
+						srckey = key
 						break
 					}
 
-					if rev.ValidatorDst == unc.ValidatorAddress {
+					if rev.ValidatorDst == unc.ValidatorAddress && ua.GTE(ra) {
 						ra := toDec(big.NewInt(0).SetBytes(rew.Amounts[0].Numeric), rew.Amounts[0].Exp)
 						ua := toDec(amt.Numeric, amt.Exp)
 						dstDelta = ra.Sub(ua)
 						dstExists = true
+						dstkey = key
 						break
 					}
 				}
 			}
 		}
 
+		// neither a src or dst exist, this wasn't a reward.
+		if !srcExists && !dstExists {
+			continue
+		}
+
 		if !srcExists {
 			rew.Validator = rev.ValidatorDst
+			temp = append(temp, rew)
+			usedValidators[srckey] = struct{}{}
 			continue
 		}
 
 		if !dstExists {
 			rew.Validator = rev.ValidatorSrc
+			temp = append(temp, rew)
+			usedValidators[dstkey] = struct{}{}
 			continue
 		}
 
 		if srcDelta.LTE(dstDelta) {
 			rew.Validator = rev.ValidatorSrc
+			usedValidators[srckey] = struct{}{}
 		} else {
 			rew.Validator = rev.ValidatorDst
+			usedValidators[dstkey] = struct{}{}
 		}
+		temp = append(temp, rew)
 	}
 
+	// now keep the real rewards.
+	rev.Rewards = temp
 	return rev, nil
 }
 
