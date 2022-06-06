@@ -98,6 +98,7 @@ type RewardsExtractionConfig struct {
 	DatastorePrefix    string
 	ChainID            string
 	Network            string
+	MaxChainHeight     uint64
 }
 
 type RewardsExtraction struct {
@@ -156,6 +157,15 @@ FETCH_HEIGHTS_LOOP:
 				Sequence: timeID,
 			})
 			sequence = timeID
+		}
+
+		// If we are at max height set a future crossingHeights
+		// this will allow us to fetch the final claimed rewards (if any) on this chain.
+		if re.Cfg.MaxChainHeight != 0 && height == re.Cfg.MaxChainHeight {
+			crossingHeights = append(crossingHeights, &Crossing{
+				Height:   height,
+				Sequence: sequence + 1,
+			})
 		}
 
 		ht := HeightTime{Height: height, Time: block.Header.Time}
