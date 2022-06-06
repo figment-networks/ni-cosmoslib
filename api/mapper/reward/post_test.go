@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap/zaptest"
 )
 
-func TestMapper_PostMsgRedelegate(t *testing.T) {
+func TestMapper_PostMsgBeginRedelegate(t *testing.T) {
 	type args struct {
 		tx   *rewstruct.RewardTx
 		dels []cosmosgrpc.Delegators
@@ -282,11 +282,11 @@ func TestMapper_PostMsgRedelegate(t *testing.T) {
 			}
 			gotRev, err := m.PostMsgBeginRedelegate(tt.args.tx, tt.args.dels)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Mapper.MsgDelegate() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Mapper.PostMsgBeginRedelegate() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotRev, tt.wantRev) {
-				t.Errorf("Mapper.MsgDelegate() = %v, want %v", gotRev, tt.wantRev)
+				t.Errorf("Mapper.PostMsgBeginRedelegate() = %v, want %v", gotRev, tt.wantRev)
 			}
 		})
 	}
