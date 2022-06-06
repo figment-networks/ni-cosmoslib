@@ -9,8 +9,9 @@ replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alp
 require (
 	github.com/cosmos/cosmos-sdk v0.45.4
 	github.com/cosmos/ibc-go v1.4.0
-	github.com/figment-networks/indexing-engine v0.9.17
-	github.com/figment-networks/ni-cosmoslib/api v0.1.4
+	github.com/figment-networks/indexing-engine v0.9.19
+	github.com/figment-networks/ni-cosmoslib/api v0.1.7
+	github.com/figment-networks/ni-cosmoslib/util v0.0.0-20220606141000-aea23dda3794
 	github.com/gogo/protobuf v1.3.3
 )
 

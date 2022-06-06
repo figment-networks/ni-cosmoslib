@@ -6,8 +6,8 @@ import (
 
 	codec_types "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/figment-networks/indexing-engine/structs"
+
 	"github.com/figment-networks/ni-cosmoslib/api/mapper"
 	"github.com/figment-networks/ni-cosmoslib/api/tendermint_mapper"
 )
