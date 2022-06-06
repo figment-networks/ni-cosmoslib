@@ -398,14 +398,14 @@ func (m *Mapper) PostMsgBeginRedelegate(rev *rewstruct.RewardTx, dels []cosmosgr
 					ua := toDec(amt.Numeric, amt.Exp)
 
 					if rev.ValidatorSrc == unc.ValidatorAddress && !srcExists {
-						srcDelta = ra.Sub(ua).Abs()
+						srcDelta = ua.Sub(ra).Abs()
 						srcExists = true
 						srcKey = key
 						break
 					}
 
 					if rev.ValidatorDst == unc.ValidatorAddress && !dstExists {
-						dstDelta = ra.Sub(ua).Abs()
+						dstDelta = ua.Sub(ra).Abs()
 						dstExists = true
 						dstKey = key
 						break
