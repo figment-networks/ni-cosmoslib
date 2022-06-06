@@ -15,7 +15,7 @@ import (
 
 	"github.com/figment-networks/ni-cosmoslib/client/cosmosgrpc"
 
-	"github.com/figment-networks/ni-cosmoslib/api/util"
+	"github.com/figment-networks/ni-cosmoslib/util"
 )
 
 type Mapper struct {
