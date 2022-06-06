@@ -13,6 +13,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"go.uber.org/zap"
 
+	"github.com/figment-networks/ni-cosmoslib/client/cosmosgrpc"
+
 	"github.com/figment-networks/ni-cosmoslib/api/util"
 )
 
@@ -347,6 +349,97 @@ func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 					break innerLoop
 				}
 			}
+		}
+	}
+
+	return rev, nil
+}
+
+func toDec(numeric *big.Int, exp int32) types.Dec {
+	if exp < 0 {
+		return types.NewDecFromBigIntWithPrec(numeric, int64(-1*exp))
+	}
+	powerTen := big.NewInt(10)
+	powerTen = powerTen.Exp(powerTen, big.NewInt(int64(exp)), nil)
+	return types.NewDecFromBigIntWithPrec(powerTen.Mul(numeric, powerTen), 0)
+}
+
+// PostMsgBeginRedelegate takes a parsed RewardTx and establishes which
+// validator should be assigned to which reward given the height - 1 reward balances (dels)
+func (m *Mapper) PostMsgBeginRedelegate(rev *rewstruct.RewardTx, dels []cosmosgrpc.Delegators) (*rewstruct.RewardTx, error) {
+	if rev.Type != "MsgBeginRedelegate" {
+		return nil, fmt.Errorf("incorrect msg type: %s", rev.Type)
+	}
+	// usedValidatorAmounts to keep track if we used a particular validator
+	// reward amount. this prevents the same validator being assigned to
+	// two rewards of the same amount.
+	usedValidatorAmounts := make(map[string]struct{})
+
+	for _, rew := range rev.Rewards {
+		srcDelta, srcExists, srcKey := types.NewDec(0), false, ""
+		dstDelta, dstExists, dstKey := types.NewDec(0), false, ""
+
+		for _, del := range dels {
+			for _, unc := range del.Unclaimed {
+				// assumption: every reward amount should exist
+				// in dels (height - 1) if there was a claim,
+				// so we can just check the first amount to
+				// establish which validator the reward belongs
+				// to.
+				for _, amt := range unc.Unclaimed {
+					if amt.Currency != rew.Amounts[0].Currency {
+						continue
+					}
+
+					// if we already used once, we cannot use it again.
+					key := fmt.Sprintf("%s:%s", unc.ValidatorAddress, amt.Numeric.String())
+					if _, ok := usedValidatorAmounts[key]; ok {
+						continue
+					}
+
+					ra := toDec(big.NewInt(0).SetBytes(rew.Amounts[0].Numeric), rew.Amounts[0].Exp)
+					ua := toDec(amt.Numeric, amt.Exp)
+
+					if rev.ValidatorSrc == unc.ValidatorAddress && !srcExists {
+						srcDelta = ua.Sub(ra).Abs()
+						srcExists = true
+						srcKey = key
+						break
+					}
+
+					if rev.ValidatorDst == unc.ValidatorAddress && !dstExists {
+						dstDelta = ua.Sub(ra).Abs()
+						dstExists = true
+						dstKey = key
+						break
+					}
+				}
+			}
+		}
+
+		// neither a src or dst exist, this wasn't a reward.
+		if !srcExists && !dstExists {
+			return nil, fmt.Errorf("invalid reward, validator is neither src nor dst: %v", rew.Amounts[0])
+		}
+
+		if !srcExists {
+			rew.Validator = rev.ValidatorDst
+			usedValidatorAmounts[srcKey] = struct{}{}
+			continue
+		}
+
+		if !dstExists {
+			rew.Validator = rev.ValidatorSrc
+			usedValidatorAmounts[dstKey] = struct{}{}
+			continue
+		}
+
+		if srcDelta.LTE(dstDelta) {
+			rew.Validator = rev.ValidatorSrc
+			usedValidatorAmounts[srcKey] = struct{}{}
+		} else {
+			rew.Validator = rev.ValidatorDst
+			usedValidatorAmounts[dstKey] = struct{}{}
 		}
 	}
 

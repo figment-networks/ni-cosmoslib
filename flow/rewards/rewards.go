@@ -79,6 +79,7 @@ type RewardProducer interface {
 	GetRewards(*rewstruct.RewardTx) []structs.ClaimedReward
 	GetDelegations(tx *rewstruct.RewardTx) (accounts []DelegatorValidator)
 	MapTransactions(txs []*tx.Tx, txResponses []*types.TxResponse, t time.Time) (retTxs *rewstruct.RewardTxs, err error)
+	PostMsgBeginRedelegate(tx *rewstruct.RewardTx, dels []cosmosgrpc.Delegators) (*rewstruct.RewardTx, error)
 }
 
 type Client interface {
@@ -421,6 +422,25 @@ func (re *RewardsExtraction) fetchHeightData(ctx context.Context, heights chan H
 				resp <- r
 				return
 			}
+
+			for i, tx := range txs.Txs {
+				if tx.Type == "MsgBeginRedelegate" {
+					dels, err := re.client.GetDelegations(ctx, height.Height-1, tx.Delegator)
+					if err != nil {
+						r.Error = fmt.Errorf("error mapping transaction getdelegations (%d): %w ", height.Height, err)
+						resp <- r
+						return
+					}
+					updatedTx, err := re.orp.PostMsgBeginRedelegate(tx, dels)
+					if err != nil {
+						r.Error = fmt.Errorf("error mapping transaction postmsgbeginredelegate (%d): %w ", height.Height, err)
+						resp <- r
+						return
+					}
+					txs.Txs[i] = updatedTx
+				}
+			}
+
 			txr, err := proto.Marshal(txs)
 			if err != nil {
 				r.Error = fmt.Errorf("error marshaling transaction  (%d): %w ", height.Height, err)
