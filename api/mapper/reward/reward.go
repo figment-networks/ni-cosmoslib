@@ -321,6 +321,9 @@ func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 						return rev, err
 					}
 					for i, p := range parsed {
+						if m.BondedTokensPool != "" && p["receiver"] == m.BondedTokensPool {
+							continue
+						}
 						am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
 						if err != nil {
 							return rev, err

@@ -140,6 +140,27 @@ func TestMapper_MsgBeginRedelegate_Osmosis(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "MsgBeginRedelegate_from_height_2402563",
+			args: args{
+				msg: []byte("\n+osmo1e45gp4d3arw9c8g4wc77fj7f0dwpuywhn4778a\x122osmovaloper1nskmzc8cqf8m9vwrxvnggtw4vw9cwx54jtfmuj\x1a2osmovaloper16jn3383fn4v4vuuvgclr3q7rumeglw8kdq6e48\"\x0f\n\x05uosmo\x12\x06843434"),
+				lg: types.ABCIMessageLog{MsgIndex: 0, Log: "", Events: []types.StringEvent{
+					{Type: "coin_received", Attributes: []types.Attribute{{Key: "receiver", Value: "osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09"}, {Key: "amount", Value: "843434uosmo"}}},
+					{Type: "coin_spent", Attributes: []types.Attribute{{Key: "spender", Value: "osmo1tygms3xhhs3yv487phx3dw4a95jn7t7lfqxwe3"}, {Key: "amount", Value: "843434uosmo"}}},
+					{Type: "message", Attributes: []types.Attribute{{Key: "action", Value: "/cosmos.staking.v1beta1.MsgBeginRedelegate"}, {Key: "sender", Value: "osmo1tygms3xhhs3yv487phx3dw4a95jn7t7lfqxwe3"}, {Key: "module", Value: "staking"}, {Key: "sender", Value: "osmo1e45gp4d3arw9c8g4wc77fj7f0dwpuywhn4778a"}}},
+					{Type: "redelegate", Attributes: []types.Attribute{{Key: "source_validator", Value: "osmovaloper1nskmzc8cqf8m9vwrxvnggtw4vw9cwx54jtfmuj"}, {Key: "destination_validator", Value: "osmovaloper16jn3383fn4v4vuuvgclr3q7rumeglw8kdq6e48"}, {Key: "amount", Value: "843434uosmo"}, {Key: "completion_time", Value: "0001-01-01T00:00:00Z"}}},
+					{Type: "transfer", Attributes: []types.Attribute{{Key: "recipient", Value: "osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09"}, {Key: "sender", Value: "osmo1tygms3xhhs3yv487phx3dw4a95jn7t7lfqxwe3"}, {Key: "amount", Value: "843434uosmo"}}},
+				},
+				},
+			},
+			wantRev: &rewstruct.RewardTx{
+				Type:         "MsgBeginRedelegate",
+				Delegator:    "osmo1e45gp4d3arw9c8g4wc77fj7f0dwpuywhn4778a",
+				ValidatorSrc: "osmovaloper1nskmzc8cqf8m9vwrxvnggtw4vw9cwx54jtfmuj",
+				ValidatorDst: "osmovaloper16jn3383fn4v4vuuvgclr3q7rumeglw8kdq6e48",
+				Amounts:      []*rewstruct.Amount{{Text: "843434uosmo", Currency: "uosmo", Numeric: []byte("\x0cު")}},
+			},
+		},
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
