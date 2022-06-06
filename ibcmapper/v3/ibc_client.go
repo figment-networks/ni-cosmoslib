@@ -5,7 +5,7 @@ import (
 
 	"github.com/figment-networks/indexing-engine/structs"
 	shared "github.com/figment-networks/indexing-engine/structs"
-	"github.com/figment-networks/ni-cosmoslib/api/util"
+	"github.com/figment-networks/ni-cosmoslib/util"
 
 	client "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
 	"github.com/gogo/protobuf/proto"

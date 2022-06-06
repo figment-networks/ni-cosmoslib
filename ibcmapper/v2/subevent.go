@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	codec_types "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/figment-networks/indexing-engine/structs"
-	"github.com/figment-networks/ni-cosmoslib/api"
-
-	codec_types "github.com/cosmos/cosmos-sdk/codec/types"
 
 	"github.com/figment-networks/ni-cosmoslib/util"
 )
@@ -52,7 +50,7 @@ func AddIBCSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.
 		case "MsgConnectionOpenTry":
 			ev, err = IBCConnectionOpenTryToSub(m.Value)
 		default:
-			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, api.ErrUnknownMessageType)
+			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, util.ErrUnknownMessageType)
 		}
 	case "channel":
 		// types defined in https://github.com/cosmos/ibc-go/blob/9f70a070d773f8bfdb62d4205d8878f3149f351a/modules/core/04-channel/types/tx.pb.go#L896-L915
@@ -79,17 +77,17 @@ func AddIBCSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.
 			ev, err = IBCChannelAcknowledgementToSub(m.Value)
 
 		default:
-			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, api.ErrUnknownMessageType)
+			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, util.ErrUnknownMessageType)
 		}
 	case "transfer":
 		switch msgType {
 		case "MsgTransfer":
 			ev, err = IBCTransferToSub(m.Value)
 		default:
-			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, api.ErrUnknownMessageType)
+			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, util.ErrUnknownMessageType)
 		}
 	default:
-		err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, api.ErrUnknownMessageType)
+		err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, util.ErrUnknownMessageType)
 	}
 
 	if len(ev.Type) > 0 {

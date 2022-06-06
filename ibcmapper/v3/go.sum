@@ -252,8 +252,6 @@ github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYF
 github.com/felixge/httpsnoop v1.0.1 h1:lvB5Jl89CsZtGIWuTcDM1E/vkVs49/Ml7JJe07l8SPQ=
 github.com/figment-networks/indexing-engine v0.9.19 h1:wue2vI7uGeXrIF55ehDjpLU7XfixkZ0jxf2r0og7u94=
 github.com/figment-networks/indexing-engine v0.9.19/go.mod h1:t7s24ZW7BR1trFxK4EKYwU/xGCg1/G5n5Vvt5xy8nG8=
-github.com/figment-networks/ni-cosmoslib/api v0.1.7 h1:Mnp6cRkxP9xqmxKduMn6r9nKhmHf7E7ajPvDoKGl8Og=
-github.com/figment-networks/ni-cosmoslib/api v0.1.7/go.mod h1:W2veNhDqlIRhdDltxhx4xmGmdR7xRr5p5hgB0ghGD74=
 github.com/figment-networks/ni-cosmoslib/util v0.0.0-20220606143051-466af0576570 h1:LZIUYzvwDDbGMwlVz6LvTxXLw8YYv8U9hOX0VVkSW4w=
 github.com/figment-networks/ni-cosmoslib/util v0.0.0-20220606143051-466af0576570/go.mod h1:+iFZ6mbgfQ+kzbcJpzHuDuATkb8HSvnegxymgAI9VOk=
 github.com/fogleman/gg v1.2.1-0.20190220221249-0403632d5b90/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
