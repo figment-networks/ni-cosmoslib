@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	codec_types "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/figment-networks/indexing-engine/structs"
-	"github.com/figment-networks/ni-cosmoslib/api"
-
-	codec_types "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/figment-networks/ni-cosmoslib/util"
 )
 
 // AddIBCSubEvent converts an ibc event from the log to a Subevent type and adds it to the provided TransactionEvent struct
@@ -17,7 +16,7 @@ func AddIBCSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.
 	// TypeUrl must be in the format "/ibc.core.client.v1.MsgCreateClient"
 	tPath := strings.Split(m.TypeUrl, ".")
 	if len(tPath) != 5 {
-		return fmt.Errorf("problem with ibc event ibc event %s: %w", m.TypeUrl, api.ErrUnknownMessageType)
+		return fmt.Errorf("problem with ibc event ibc event %s: %w", m.TypeUrl, util.ErrUnknownMessageType)
 	}
 
 	msgType := tPath[4]
@@ -35,7 +34,7 @@ func AddIBCSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.
 		case "MsgSubmitMisbehaviour":
 			ev, err = IBCSubmitMisbehaviourToSub(m.Value)
 		default:
-			err = fmt.Errorf("problem with ibc event %s - %s: %w", msgRoute, msgType, api.ErrUnknownMessageType)
+			err = fmt.Errorf("problem with ibc event %s - %s: %w", msgRoute, msgType, util.ErrUnknownMessageType)
 		}
 	case "connection":
 		switch msgType {
@@ -48,7 +47,7 @@ func AddIBCSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.
 		case "MsgConnectionOpenTry":
 			ev, err = IBCConnectionOpenTryToSub(m.Value)
 		default:
-			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, api.ErrUnknownMessageType)
+			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, util.ErrUnknownMessageType)
 		}
 	case "channel":
 		switch msgType {
@@ -72,17 +71,17 @@ func AddIBCSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.
 			ev, err = IBCChannelAcknowledgementToSub(m.Value)
 
 		default:
-			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, api.ErrUnknownMessageType)
+			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, util.ErrUnknownMessageType)
 		}
 	case "transfer":
 		switch msgType {
 		case "MsgTransfer":
 			ev, err = IBCTransferToSub(m.Value)
 		default:
-			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, api.ErrUnknownMessageType)
+			err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, util.ErrUnknownMessageType)
 		}
 	default:
-		err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, api.ErrUnknownMessageType)
+		err = fmt.Errorf("problem with ibc event %s - %s:  %w", msgRoute, msgType, util.ErrUnknownMessageType)
 	}
 
 	if len(ev.Type) > 0 {

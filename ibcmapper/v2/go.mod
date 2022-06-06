@@ -11,6 +11,7 @@ require (
 	github.com/cosmos/ibc-go/v2 v2.2.0
 	github.com/figment-networks/indexing-engine v0.9.19
 	github.com/figment-networks/ni-cosmoslib/api v0.1.7
+	github.com/figment-networks/ni-cosmoslib/util v0.0.0-20220606143051-466af0576570
 	github.com/gogo/protobuf v1.3.3
 )
 

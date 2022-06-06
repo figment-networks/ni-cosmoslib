@@ -9,7 +9,7 @@ import (
 	"github.com/figment-networks/indexing-engine/structs"
 	shared "github.com/figment-networks/indexing-engine/structs"
 
-	"github.com/figment-networks/ni-cosmoslib/api/util"
+	"github.com/figment-networks/ni-cosmoslib/util"
 
 	channel "github.com/cosmos/ibc-go/modules/core/04-channel/types"
 	"github.com/gogo/protobuf/proto"

@@ -6,10 +6,11 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/figment-networks/indexing-engine/structs"
+	"github.com/figment-networks/ni-cosmoslib/api"
 
 	codec_types "github.com/cosmos/cosmos-sdk/codec/types"
 
-	api "github.com/figment-networks/ni-cosmoslib/api"
+	"github.com/figment-networks/ni-cosmoslib/util"
 )
 
 var invalidTypeErrFmt string = "Not a %s type: %w"
@@ -20,7 +21,7 @@ func AddIBCSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.
 	// TypeUrl must be in the format "/ibc.core.client.v1.MsgCreateClient"
 	tPath := strings.Split(m.TypeUrl, ".")
 	if len(tPath) != 5 {
-		return fmt.Errorf("problem with ibc event ibc event %s: %w", m.TypeUrl, api.ErrUnknownMessageType)
+		return fmt.Errorf("problem with ibc event ibc event %s: %w", m.TypeUrl, util.ErrUnknownMessageType)
 	}
 
 	msgType := tPath[4]
@@ -38,7 +39,7 @@ func AddIBCSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.
 		case "MsgSubmitMisbehaviour":
 			ev, err = IBCSubmitMisbehaviourToSub(m.Value)
 		default:
-			err = fmt.Errorf("problem with ibc event %s - %s: %w", msgRoute, msgType, api.ErrUnknownMessageType)
+			err = fmt.Errorf("problem with ibc event %s - %s: %w", msgRoute, msgType, util.ErrUnknownMessageType)
 		}
 	case "connection":
 		switch msgType {
