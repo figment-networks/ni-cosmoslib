@@ -1,7 +1,6 @@
 package reward
 
 import (
-	"context"
 	"fmt"
 	"math/big"
 	"regexp"
@@ -19,16 +18,11 @@ import (
 	"github.com/figment-networks/ni-cosmoslib/api/util"
 )
 
-type Client interface {
-	GetDelegations(ctx context.Context, height uint64, delegatorAddress string) (dels []cosmosgrpc.Delegators, err error)
-}
-
 type Mapper struct {
 	Logger              *zap.Logger
 	DefaultCurrency     string
 	BondedTokensPool    string
 	NotBondedTokensPool string
-	Client              Client
 }
 
 // osmo BondedTokensPool    (delegate) osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09    https://www.mintscan.io/osmosis/txs/29039372E1308EFC7118B83E53BB88B03D7A877A200829150CA27338F77C405B
@@ -63,7 +57,7 @@ func ValidatorFromTx(tx *rewstruct.RewardTx) string {
 }
 
 // ParseRewardEvent converts a cosmos event from the log to a Subevent type and adds it to the provided RewardEvent struct
-func ParseRewardEvent(ctx context.Context, height uint64, module, msgType string, raw []byte, lg types.ABCIMessageLog, ma *Mapper) (rev *rewstruct.RewardTx, err error) {
+func ParseRewardEvent(module, msgType string, raw []byte, lg types.ABCIMessageLog, ma *Mapper) (rev *rewstruct.RewardTx, err error) {
 
 	switch module {
 	case "distribution":
@@ -84,15 +78,7 @@ func ParseRewardEvent(ctx context.Context, height uint64, module, msgType string
 		case "MsgDelegate":
 			return ma.MsgDelegate(raw, lg)
 		case "MsgBeginRedelegate":
-			retx, err := ma.MsgBeginRedelegate(raw, lg)
-			if err != nil {
-				return nil, err
-			}
-			dels, err := ma.Client.GetDelegations(ctx, height-1, retx.Delegator)
-			if err != nil {
-				return nil, err
-			}
-			return ma.PostMsgBeginRedelegate(retx, dels)
+			return ma.MsgBeginRedelegate(raw, lg)
 		case "MsgEditValidator":
 			return ma.MsgEditValidator(raw, lg)
 		case "MsgCreateValidator":
@@ -378,16 +364,17 @@ func toDec(numeric *big.Int, exp int32) types.Dec {
 // PostMsgBeginRedelegate takes a parsed RewardTx and establishes which
 // validator should be assigned to which reward given the height - 1 reward balances (dels)
 func (m *Mapper) PostMsgBeginRedelegate(rev *rewstruct.RewardTx, dels []cosmosgrpc.Delegators) (*rewstruct.RewardTx, error) {
-	// usedValidators to keep track if we used the validator
-	usedValidators := make(map[string]struct{})
+	if rev.Type != "MsgBeginRedelegate" {
+		return nil, fmt.Errorf("incorrect msg type: %s", rev.Type)
+	}
+	// usedValidatorAmounts to keep track if we used a particular validator
+	// reward amount. this prevents the same validator being assigned to
+	// two rewards of the same amount.
+	usedValidatorAmounts := make(map[string]struct{})
 
-	// to keep track of the real rewards
-	temp := rev.Rewards[:0]
 	for _, rew := range rev.Rewards {
-		// identify they key for the reward
-		var srckey, dstkey string
-		srcDelta, srcExists := types.NewDec(0), false
-		dstDelta, dstExists := types.NewDec(0), false
+		srcDelta, srcExists, srcKey := types.NewDec(0), false, ""
+		dstDelta, dstExists, dstKey := types.NewDec(0), false, ""
 
 		for _, del := range dels {
 			for _, unc := range del.Unclaimed {
@@ -403,28 +390,24 @@ func (m *Mapper) PostMsgBeginRedelegate(rev *rewstruct.RewardTx, dels []cosmosgr
 
 					// if we already used once, we cannot use it again.
 					key := fmt.Sprintf("%s:%s", unc.ValidatorAddress, amt.Numeric.String())
-					if _, ok := usedValidators[key]; ok {
+					if _, ok := usedValidatorAmounts[key]; ok {
 						continue
 					}
 
 					ra := toDec(big.NewInt(0).SetBytes(rew.Amounts[0].Numeric), rew.Amounts[0].Exp)
 					ua := toDec(amt.Numeric, amt.Exp)
 
-					if rev.ValidatorSrc == unc.ValidatorAddress && ua.GTE(ra) {
-						ra := toDec(big.NewInt(0).SetBytes(rew.Amounts[0].Numeric), rew.Amounts[0].Exp)
-						ua := toDec(amt.Numeric, amt.Exp)
-						srcDelta = ra.Sub(ua)
+					if rev.ValidatorSrc == unc.ValidatorAddress && !srcExists {
+						srcDelta = ra.Sub(ua).Abs()
 						srcExists = true
-						srckey = key
+						srcKey = key
 						break
 					}
 
-					if rev.ValidatorDst == unc.ValidatorAddress && ua.GTE(ra) {
-						ra := toDec(big.NewInt(0).SetBytes(rew.Amounts[0].Numeric), rew.Amounts[0].Exp)
-						ua := toDec(amt.Numeric, amt.Exp)
-						dstDelta = ra.Sub(ua)
+					if rev.ValidatorDst == unc.ValidatorAddress && !dstExists {
+						dstDelta = ra.Sub(ua).Abs()
 						dstExists = true
-						dstkey = key
+						dstKey = key
 						break
 					}
 				}
@@ -433,35 +416,30 @@ func (m *Mapper) PostMsgBeginRedelegate(rev *rewstruct.RewardTx, dels []cosmosgr
 
 		// neither a src or dst exist, this wasn't a reward.
 		if !srcExists && !dstExists {
-			continue
+			return nil, fmt.Errorf("invalid reward, validator is neither src nor dst: %v", rew.Amounts[0])
 		}
 
 		if !srcExists {
 			rew.Validator = rev.ValidatorDst
-			temp = append(temp, rew)
-			usedValidators[srckey] = struct{}{}
+			usedValidatorAmounts[srcKey] = struct{}{}
 			continue
 		}
 
 		if !dstExists {
 			rew.Validator = rev.ValidatorSrc
-			temp = append(temp, rew)
-			usedValidators[dstkey] = struct{}{}
+			usedValidatorAmounts[dstKey] = struct{}{}
 			continue
 		}
 
 		if srcDelta.LTE(dstDelta) {
 			rew.Validator = rev.ValidatorSrc
-			usedValidators[srckey] = struct{}{}
+			usedValidatorAmounts[srcKey] = struct{}{}
 		} else {
 			rew.Validator = rev.ValidatorDst
-			usedValidators[dstkey] = struct{}{}
+			usedValidatorAmounts[dstKey] = struct{}{}
 		}
-		temp = append(temp, rew)
 	}
 
-	// now keep the real rewards.
-	rev.Rewards = temp
 	return rev, nil
 }
 
