@@ -329,14 +329,6 @@ func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 						reward := &rewstruct.RewardAmount{
 							Amounts: am,
 						}
-						// /*	To be sure which transaction belongs to which validator, we need to check the delegation for the previous block.
-						// 	This code is temporary and may not work in some cases.
-						// */
-						// if i%2 == 0 {
-						// 	reward.Validator = wvc.ValidatorSrcAddress
-						// } else {
-						// 	reward.Validator = wvc.ValidatorDstAddress
-						// }
 						if wvc.DelegatorAddress != p["recipient"] {
 							rev.RewardRecipients = append(rev.RewardRecipients, p["recipient"])
 						}
