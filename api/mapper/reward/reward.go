@@ -18,6 +18,17 @@ import (
 	"github.com/figment-networks/ni-cosmoslib/api/util"
 )
 
+/* Osmosis BondedTokensPool and NotBondedTokensPool addresses have been taken from https://docs.osmosis.zone/developing/osmosis-core/modules/
+To find the correct addresses for kava and cosmos, I traced a few delegate/undelegate transactions each and identified the addresses as follows
+osmo BondedTokensPool    (delegate) osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09    https://www.mintscan.io/osmosis/txs/29039372E1308EFC7118B83E53BB88B03D7A877A200829150CA27338F77C405B
+osmo NotBondedTokensPool (undelegate) osmo1tygms3xhhs3yv487phx3dw4a95jn7t7lfqxwe3  https://www.mintscan.io/osmosis/txs/D7BF9ECFF1135B7D088EC8DE2685F98248924F66EF8083E97E076A2BA1C51420
+
+cosmos BondedTokensPool (delegate)      "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh" https://www.mintscan.io/cosmos/txs/39AA4A671D9436878000C64EFC6E12527EFE412A84A2A347BAB591C0415D4966
+cosmos NotBondedTokensPool (undelegate) "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r" https://www.mintscan.io/cosmos/txs/8AFC27C7DEC448DE0DFD9E419C11269601401A10CB054C6BB3BE4C1A45CE9C5D
+
+kava BondedTokensPool (delegate) "kava1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3fwaj0s"       https://www.mintscan.io/kava/txs/17B3C52FB4F876EC53FB18B4B2592F47B2CFB81BDD76E375F166036FB9DE59AA
+kava NotBondedTokensPool (undelegate) "kava1tygms3xhhs3yv487phx3dw4a95jn7t7lawprey"  https://www.mintscan.io/kava/txs/B06C50A36FB3F01584F190FB68BA28FF9C3CCC2E286CBDDECFBD5A6D3DD7C1A6
+*/
 type Mapper struct {
 	Logger              *zap.Logger
 	DefaultCurrency     string
@@ -25,20 +36,7 @@ type Mapper struct {
 	NotBondedTokensPool string
 }
 
-// osmo BondedTokensPool    (delegate) osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09    https://www.mintscan.io/osmosis/txs/29039372E1308EFC7118B83E53BB88B03D7A877A200829150CA27338F77C405B
-// osmo NotBondedTokensPool (undelegate) osmo1tygms3xhhs3yv487phx3dw4a95jn7t7lfqxwe3  https://www.mintscan.io/osmosis/txs/D7BF9ECFF1135B7D088EC8DE2685F98248924F66EF8083E97E076A2BA1C51420
-
-// cosmos BondedTokensPool (delegate)      "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh" https://www.mintscan.io/cosmos/txs/39AA4A671D9436878000C64EFC6E12527EFE412A84A2A347BAB591C0415D4966
-// cosmos NotBondedTokensPool (undelegate) "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r" https://www.mintscan.io/cosmos/txs/8AFC27C7DEC448DE0DFD9E419C11269601401A10CB054C6BB3BE4C1A45CE9C5D
-
-// kava BondedTokensPool (delegate) "kava1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3fwaj0s"       https://www.mintscan.io/kava/txs/17B3C52FB4F876EC53FB18B4B2592F47B2CFB81BDD76E375F166036FB9DE59AA
-// kava NotBondedTokensPool (undelegate) "kava1tygms3xhhs3yv487phx3dw4a95jn7t7lawprey"  https://www.mintscan.io/kava/txs/B06C50A36FB3F01584F190FB68BA28FF9C3CCC2E286CBDDECFBD5A6D3DD7C1A6
-
 var currencyRegexp = regexp.MustCompile(`^\d+$`)
-
-// delegate undelegate redelegate, -> addresses
-// delegate undelegate redelegate + withdraw delegator rewards -> delagator rewards
-// withdraw validator commision -> validator rewards
 
 // ValidatorFromTx maps the resolved `ValidatorSrc` and `ValidatorDst` from processing `ParseRewardEvent` into a common function
 func ValidatorFromTx(tx *rewstruct.RewardTx) string {
@@ -135,8 +133,8 @@ func (m *Mapper) MsgWithdrawDelegatorReward(msg []byte, lg types.ABCIMessageLog)
 	}
 
 	for _, ev := range lg.GetEvents() {
-		if ev.GetType() == "coin_received" {
-			parsed, err := m.groupRSEvents(lg.GetEvents())
+		if ev.GetType() == "transfer" {
+			parsed, err := m.groupEvents(ev)
 			if err != nil {
 				return rev, err
 			}
@@ -150,13 +148,13 @@ func (m *Mapper) MsgWithdrawDelegatorReward(msg []byte, lg types.ABCIMessageLog)
 					Amounts:   am,
 					Validator: wvc.ValidatorAddress,
 				}
-				if wvc.DelegatorAddress != p["receiver"] {
-					rev.RewardRecipients = append(rev.RewardRecipients, p["receiver"])
+				if wvc.DelegatorAddress != p["recipient"] {
+					rev.RewardRecipients = append(rev.RewardRecipients, p["recipient"])
 				}
 				rev.Rewards = append(rev.Rewards, reward)
 			}
+			break
 		}
-		break
 	}
 
 	return rev, nil
@@ -175,7 +173,7 @@ func (m *Mapper) MsgUndelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstr
 		ValidatorSrc: wvc.ValidatorAddress,
 	}
 
-	for _, e := range []string{"unbond", "coin_received"} {
+	for _, e := range []string{"unbond", "transfer"} {
 	innerLoop:
 		for _, ev := range lg.GetEvents() {
 			if e == ev.GetType() {
@@ -193,13 +191,13 @@ func (m *Mapper) MsgUndelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstr
 						rev.Amounts = append(rev.Amounts, am...)
 					}
 					break innerLoop
-				case "coin_received":
-					parsed, err := m.groupRSEvents(lg.GetEvents())
+				case "transfer":
+					parsed, err := m.groupEvents(ev)
 					if err != nil {
 						return rev, err
 					}
 					for _, p := range parsed {
-						if m.NotBondedTokensPool != "" && p["receiver"] == m.NotBondedTokensPool {
+						if m.NotBondedTokensPool != "" && p["recipient"] == m.NotBondedTokensPool {
 							continue
 						}
 						am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
@@ -210,8 +208,8 @@ func (m *Mapper) MsgUndelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstr
 							Amounts:   am,
 							Validator: wvc.ValidatorAddress,
 						}
-						if wvc.DelegatorAddress != p["receiver"] {
-							rev.RewardRecipients = append(rev.RewardRecipients, p["receiver"])
+						if wvc.DelegatorAddress != p["recipient"] {
+							rev.RewardRecipients = append(rev.RewardRecipients, p["recipient"])
 						}
 						rev.Rewards = append(rev.Rewards, reward)
 					}
@@ -237,7 +235,7 @@ func (m *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruc
 		ValidatorDst: wvc.ValidatorAddress,
 	}
 
-	for _, e := range []string{"delegate", "coin_received"} {
+	for _, e := range []string{"delegate", "transfer"} {
 	innerLoop:
 		for _, ev := range lg.GetEvents() {
 			if e == ev.GetType() {
@@ -255,13 +253,13 @@ func (m *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruc
 						rev.Amounts = append(rev.Amounts, am...)
 					}
 					break innerLoop
-				case "coin_received":
-					parsed, err := m.groupRSEvents(lg.GetEvents())
+				case "transfer":
+					parsed, err := m.groupEvents(ev)
 					if err != nil {
 						return rev, err
 					}
 					for _, p := range parsed {
-						if m.BondedTokensPool != "" && p["receiver"] == m.BondedTokensPool {
+						if m.BondedTokensPool != "" && p["recipient"] == m.BondedTokensPool {
 							continue
 						}
 						am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
@@ -272,8 +270,8 @@ func (m *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruc
 							Amounts:   am,
 							Validator: wvc.ValidatorAddress,
 						}
-						if wvc.DelegatorAddress != p["receiver"] {
-							rev.RewardRecipients = append(rev.RewardRecipients, p["receiver"])
+						if wvc.DelegatorAddress != p["recipient"] {
+							rev.RewardRecipients = append(rev.RewardRecipients, p["recipient"])
 						}
 						rev.Rewards = append(rev.Rewards, reward)
 					}
@@ -299,7 +297,7 @@ func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 		ValidatorDst: wvc.ValidatorDstAddress,
 		Delegator:    wvc.DelegatorAddress,
 	}
-	for _, e := range []string{"redelegate", "coin_received"} {
+	for _, e := range []string{"redelegate", "transfer"} {
 	innerLoop:
 		for _, ev := range lg.GetEvents() {
 			if e == ev.GetType() {
@@ -317,13 +315,13 @@ func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 						rev.Amounts = append(rev.Amounts, am...)
 					}
 					break innerLoop
-				case "coin_received":
-					parsed, err := m.groupRSEvents(lg.GetEvents())
+				case "transfer":
+					parsed, err := m.groupEvents(ev)
 					if err != nil {
 						return rev, err
 					}
-					for i, p := range parsed {
-						if m.BondedTokensPool != "" && p["receiver"] == m.BondedTokensPool {
+					for _, p := range parsed {
+						if m.BondedTokensPool != "" && p["recipient"] == m.BondedTokensPool {
 							continue
 						}
 						am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
@@ -333,16 +331,8 @@ func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 						reward := &rewstruct.RewardAmount{
 							Amounts: am,
 						}
-						/*	To be sure which transaction belongs to which validator, we need to check the delegation for the previous block.
-							This code is temporary and may not work in some cases.
-						*/
-						if i%2 == 0 { // TODO in orde
-							reward.Validator = wvc.ValidatorSrcAddress
-						} else {
-							reward.Validator = wvc.ValidatorDstAddress
-						}
-						if wvc.DelegatorAddress != p["receiver"] {
-							rev.RewardRecipients = append(rev.RewardRecipients, p["receiver"])
+						if wvc.DelegatorAddress != p["recipient"] {
+							rev.RewardRecipients = append(rev.RewardRecipients, p["recipient"])
 						}
 						rev.Rewards = append(rev.Rewards, reward)
 					}
@@ -542,6 +532,7 @@ func fAmounts(defaultCurrency string, amounts []string) (am []*rewstruct.Amount,
 }
 
 var rewardEvents = map[string][]string{
+	"transfer":            {"recipient", "sender", "amount"},
 	"coin_received":       {"receiver", "amount"},
 	"coin_spent":          {"spender", "amount"},
 	"delegate":            {"amount"},
@@ -605,47 +596,6 @@ func (m *Mapper) groupEvents(ev types.StringEvent) (result []map[string]string, 
 	}
 	if len(result) == 0 {
 		return result, fmt.Errorf("missing events type: %s", etype)
-	}
-
-	return result, nil
-}
-
-// groupRSEvents group coin_received/coin_spent events into slice of maps
-func (m *Mapper) groupRSEvents(ev types.StringEvents) (result []map[string]string, err error) {
-	/*
-		Both coin_received and coin_spent contains pairs "receiver", "amount" and "spender", "amount".
-		The goal is to group these pairs. e.g.
-		a = [[a:1], [b:1], [a:2], [b:2], [a:3], [b:3]]
-		b = [[a:1], [c:1], [a:2], [c:2], [a:3], [c:3]]
-
-		out = [{a:1,b:1 c:1}, {a:2,b:2, c:2}, {a:3, b:3, c:3}]
-	*/
-	received := []types.Attribute{}
-	send := []types.Attribute{}
-
-	for _, r := range ev {
-		switch r.GetType() {
-		case "coin_received":
-			received = append(received, r.GetAttributes()...)
-		case "coin_spent":
-			send = append(send, r.GetAttributes()...)
-		}
-	}
-	if len(received) != len(send) {
-		return result, fmt.Errorf("lack of consistency in coin_received/coin_spent events")
-	}
-	eventLen := len(rewardEvents["coin_received"])
-	for i := 0; i < len(received); i = i + eventLen {
-		emap := make(map[string]string)
-
-		for j := 0; j < eventLen; j++ {
-			if i+j <= len(received) {
-				r, s := received[i+j], send[i+j]
-				emap[r.Key] = r.Value
-				emap[s.Key] = s.Value
-			}
-		}
-		result = append(result, emap)
 	}
 
 	return result, nil
