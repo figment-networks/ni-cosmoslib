@@ -135,8 +135,8 @@ func (m *Mapper) MsgWithdrawDelegatorReward(msg []byte, lg types.ABCIMessageLog)
 	}
 
 	for _, ev := range lg.GetEvents() {
-		if ev.GetType() == "coin_received" {
-			parsed, err := m.groupRSEvents(lg.GetEvents())
+		if ev.GetType() == "transfer" {
+			parsed, err := m.groupEvents(ev)
 			if err != nil {
 				return rev, err
 			}
@@ -150,13 +150,13 @@ func (m *Mapper) MsgWithdrawDelegatorReward(msg []byte, lg types.ABCIMessageLog)
 					Amounts:   am,
 					Validator: wvc.ValidatorAddress,
 				}
-				if wvc.DelegatorAddress != p["receiver"] {
-					rev.RewardRecipients = append(rev.RewardRecipients, p["receiver"])
+				if wvc.DelegatorAddress != p["recipient"] {
+					rev.RewardRecipients = append(rev.RewardRecipients, p["recipient"])
 				}
 				rev.Rewards = append(rev.Rewards, reward)
 			}
+			break
 		}
-		break
 	}
 
 	return rev, nil
@@ -175,7 +175,7 @@ func (m *Mapper) MsgUndelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstr
 		ValidatorSrc: wvc.ValidatorAddress,
 	}
 
-	for _, e := range []string{"unbond", "coin_received"} {
+	for _, e := range []string{"unbond", "transfer"} {
 	innerLoop:
 		for _, ev := range lg.GetEvents() {
 			if e == ev.GetType() {
@@ -193,13 +193,13 @@ func (m *Mapper) MsgUndelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstr
 						rev.Amounts = append(rev.Amounts, am...)
 					}
 					break innerLoop
-				case "coin_received":
-					parsed, err := m.groupRSEvents(lg.GetEvents())
+				case "transfer":
+					parsed, err := m.groupEvents(ev)
 					if err != nil {
 						return rev, err
 					}
 					for _, p := range parsed {
-						if m.NotBondedTokensPool != "" && p["receiver"] == m.NotBondedTokensPool {
+						if m.NotBondedTokensPool != "" && p["recipient"] == m.NotBondedTokensPool {
 							continue
 						}
 						am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
@@ -210,8 +210,8 @@ func (m *Mapper) MsgUndelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstr
 							Amounts:   am,
 							Validator: wvc.ValidatorAddress,
 						}
-						if wvc.DelegatorAddress != p["receiver"] {
-							rev.RewardRecipients = append(rev.RewardRecipients, p["receiver"])
+						if wvc.DelegatorAddress != p["recipient"] {
+							rev.RewardRecipients = append(rev.RewardRecipients, p["recipient"])
 						}
 						rev.Rewards = append(rev.Rewards, reward)
 					}
@@ -237,7 +237,7 @@ func (m *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruc
 		ValidatorDst: wvc.ValidatorAddress,
 	}
 
-	for _, e := range []string{"delegate", "coin_received"} {
+	for _, e := range []string{"delegate", "transfer"} {
 	innerLoop:
 		for _, ev := range lg.GetEvents() {
 			if e == ev.GetType() {
@@ -255,13 +255,13 @@ func (m *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruc
 						rev.Amounts = append(rev.Amounts, am...)
 					}
 					break innerLoop
-				case "coin_received":
-					parsed, err := m.groupRSEvents(lg.GetEvents())
+				case "transfer":
+					parsed, err := m.groupEvents(ev)
 					if err != nil {
 						return rev, err
 					}
 					for _, p := range parsed {
-						if m.BondedTokensPool != "" && p["receiver"] == m.BondedTokensPool {
+						if m.BondedTokensPool != "" && p["recipient"] == m.BondedTokensPool {
 							continue
 						}
 						am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
@@ -272,8 +272,8 @@ func (m *Mapper) MsgDelegate(msg []byte, lg types.ABCIMessageLog) (rev *rewstruc
 							Amounts:   am,
 							Validator: wvc.ValidatorAddress,
 						}
-						if wvc.DelegatorAddress != p["receiver"] {
-							rev.RewardRecipients = append(rev.RewardRecipients, p["receiver"])
+						if wvc.DelegatorAddress != p["recipient"] {
+							rev.RewardRecipients = append(rev.RewardRecipients, p["recipient"])
 						}
 						rev.Rewards = append(rev.Rewards, reward)
 					}
@@ -299,7 +299,7 @@ func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 		ValidatorDst: wvc.ValidatorDstAddress,
 		Delegator:    wvc.DelegatorAddress,
 	}
-	for _, e := range []string{"redelegate", "coin_received"} {
+	for _, e := range []string{"redelegate", "transfer"} {
 	innerLoop:
 		for _, ev := range lg.GetEvents() {
 			if e == ev.GetType() {
@@ -317,13 +317,13 @@ func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 						rev.Amounts = append(rev.Amounts, am...)
 					}
 					break innerLoop
-				case "coin_received":
-					parsed, err := m.groupRSEvents(lg.GetEvents())
+				case "transfer":
+					parsed, err := m.groupEvents(ev)
 					if err != nil {
 						return rev, err
 					}
 					for i, p := range parsed {
-						if m.BondedTokensPool != "" && p["receiver"] == m.BondedTokensPool {
+						if m.BondedTokensPool != "" && p["recipient"] == m.BondedTokensPool {
 							continue
 						}
 						am, err := fAmounts(m.DefaultCurrency, strings.Split(p["amount"], ","))
@@ -341,8 +341,8 @@ func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 						} else {
 							reward.Validator = wvc.ValidatorDstAddress
 						}
-						if wvc.DelegatorAddress != p["receiver"] {
-							rev.RewardRecipients = append(rev.RewardRecipients, p["receiver"])
+						if wvc.DelegatorAddress != p["recipient"] {
+							rev.RewardRecipients = append(rev.RewardRecipients, p["recipient"])
 						}
 						rev.Rewards = append(rev.Rewards, reward)
 					}
@@ -542,6 +542,7 @@ func fAmounts(defaultCurrency string, amounts []string) (am []*rewstruct.Amount,
 }
 
 var rewardEvents = map[string][]string{
+	"transfer":            {"recipient", "sender", "amount"},
 	"coin_received":       {"receiver", "amount"},
 	"coin_spent":          {"spender", "amount"},
 	"delegate":            {"amount"},
