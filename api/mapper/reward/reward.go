@@ -18,21 +18,23 @@ import (
 	"github.com/figment-networks/ni-cosmoslib/api/util"
 )
 
+/* Osmosis BondedTokensPool and NotBondedTokensPool addresses have been taken from https://docs.osmosis.zone/developing/osmosis-core/modules/
+To find the correct addresses for kava and cosmos, I traced a few delegate/undelegate transactions each and identified the addresses as follows
+osmo BondedTokensPool    (delegate) osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09    https://www.mintscan.io/osmosis/txs/29039372E1308EFC7118B83E53BB88B03D7A877A200829150CA27338F77C405B
+osmo NotBondedTokensPool (undelegate) osmo1tygms3xhhs3yv487phx3dw4a95jn7t7lfqxwe3  https://www.mintscan.io/osmosis/txs/D7BF9ECFF1135B7D088EC8DE2685F98248924F66EF8083E97E076A2BA1C51420
+
+cosmos BondedTokensPool (delegate)      "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh" https://www.mintscan.io/cosmos/txs/39AA4A671D9436878000C64EFC6E12527EFE412A84A2A347BAB591C0415D4966
+cosmos NotBondedTokensPool (undelegate) "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r" https://www.mintscan.io/cosmos/txs/8AFC27C7DEC448DE0DFD9E419C11269601401A10CB054C6BB3BE4C1A45CE9C5D
+
+kava BondedTokensPool (delegate) "kava1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3fwaj0s"       https://www.mintscan.io/kava/txs/17B3C52FB4F876EC53FB18B4B2592F47B2CFB81BDD76E375F166036FB9DE59AA
+kava NotBondedTokensPool (undelegate) "kava1tygms3xhhs3yv487phx3dw4a95jn7t7lawprey"  https://www.mintscan.io/kava/txs/B06C50A36FB3F01584F190FB68BA28FF9C3CCC2E286CBDDECFBD5A6D3DD7C1A6
+*/
 type Mapper struct {
 	Logger              *zap.Logger
 	DefaultCurrency     string
 	BondedTokensPool    string
 	NotBondedTokensPool string
 }
-
-// osmo BondedTokensPool    (delegate) osmo1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3aq6l09    https://www.mintscan.io/osmosis/txs/29039372E1308EFC7118B83E53BB88B03D7A877A200829150CA27338F77C405B
-// osmo NotBondedTokensPool (undelegate) osmo1tygms3xhhs3yv487phx3dw4a95jn7t7lfqxwe3  https://www.mintscan.io/osmosis/txs/D7BF9ECFF1135B7D088EC8DE2685F98248924F66EF8083E97E076A2BA1C51420
-
-// cosmos BondedTokensPool (delegate)      "cosmos1fl48vsnmsdzcv85q5d2q4z5ajdha8yu34mf0eh" https://www.mintscan.io/cosmos/txs/39AA4A671D9436878000C64EFC6E12527EFE412A84A2A347BAB591C0415D4966
-// cosmos NotBondedTokensPool (undelegate) "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r" https://www.mintscan.io/cosmos/txs/8AFC27C7DEC448DE0DFD9E419C11269601401A10CB054C6BB3BE4C1A45CE9C5D
-
-// kava BondedTokensPool (delegate) "kava1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3fwaj0s"       https://www.mintscan.io/kava/txs/17B3C52FB4F876EC53FB18B4B2592F47B2CFB81BDD76E375F166036FB9DE59AA
-// kava NotBondedTokensPool (undelegate) "kava1tygms3xhhs3yv487phx3dw4a95jn7t7lawprey"  https://www.mintscan.io/kava/txs/B06C50A36FB3F01584F190FB68BA28FF9C3CCC2E286CBDDECFBD5A6D3DD7C1A6
 
 var currencyRegexp = regexp.MustCompile(`^\d+$`)
 
