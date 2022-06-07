@@ -36,10 +36,6 @@ type Mapper struct {
 
 var currencyRegexp = regexp.MustCompile(`^\d+$`)
 
-// delegate undelegate redelegate, -> addresses
-// delegate undelegate redelegate + withdraw delegator rewards -> delagator rewards
-// withdraw validator commision -> validator rewards
-
 // ValidatorFromTx maps the resolved `ValidatorSrc` and `ValidatorDst` from processing `ParseRewardEvent` into a common function
 func ValidatorFromTx(tx *rewstruct.RewardTx) string {
 	var validator string
@@ -322,7 +318,7 @@ func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 					if err != nil {
 						return rev, err
 					}
-					for i, p := range parsed {
+					for _, p := range parsed {
 						if m.BondedTokensPool != "" && p["recipient"] == m.BondedTokensPool {
 							continue
 						}
@@ -333,14 +329,14 @@ func (m *Mapper) MsgBeginRedelegate(msg []byte, lg types.ABCIMessageLog) (rev *r
 						reward := &rewstruct.RewardAmount{
 							Amounts: am,
 						}
-						/*	To be sure which transaction belongs to which validator, we need to check the delegation for the previous block.
-							This code is temporary and may not work in some cases.
-						*/
-						if i%2 == 0 { // TODO in orde
-							reward.Validator = wvc.ValidatorSrcAddress
-						} else {
-							reward.Validator = wvc.ValidatorDstAddress
-						}
+						// /*	To be sure which transaction belongs to which validator, we need to check the delegation for the previous block.
+						// 	This code is temporary and may not work in some cases.
+						// */
+						// if i%2 == 0 {
+						// 	reward.Validator = wvc.ValidatorSrcAddress
+						// } else {
+						// 	reward.Validator = wvc.ValidatorDstAddress
+						// }
 						if wvc.DelegatorAddress != p["recipient"] {
 							rev.RewardRecipients = append(rev.RewardRecipients, p["recipient"])
 						}
@@ -606,47 +602,6 @@ func (m *Mapper) groupEvents(ev types.StringEvent) (result []map[string]string, 
 	}
 	if len(result) == 0 {
 		return result, fmt.Errorf("missing events type: %s", etype)
-	}
-
-	return result, nil
-}
-
-// groupRSEvents group coin_received/coin_spent events into slice of maps
-func (m *Mapper) groupRSEvents(ev types.StringEvents) (result []map[string]string, err error) {
-	/*
-		Both coin_received and coin_spent contains pairs "receiver", "amount" and "spender", "amount".
-		The goal is to group these pairs. e.g.
-		a = [[a:1], [b:1], [a:2], [b:2], [a:3], [b:3]]
-		b = [[a:1], [c:1], [a:2], [c:2], [a:3], [c:3]]
-
-		out = [{a:1,b:1 c:1}, {a:2,b:2, c:2}, {a:3, b:3, c:3}]
-	*/
-	received := []types.Attribute{}
-	send := []types.Attribute{}
-
-	for _, r := range ev {
-		switch r.GetType() {
-		case "coin_received":
-			received = append(received, r.GetAttributes()...)
-		case "coin_spent":
-			send = append(send, r.GetAttributes()...)
-		}
-	}
-	if len(received) != len(send) {
-		return result, fmt.Errorf("lack of consistency in coin_received/coin_spent events")
-	}
-	eventLen := len(rewardEvents["coin_received"])
-	for i := 0; i < len(received); i = i + eventLen {
-		emap := make(map[string]string)
-
-		for j := 0; j < eventLen; j++ {
-			if i+j <= len(received) {
-				r, s := received[i+j], send[i+j]
-				emap[r.Key] = r.Value
-				emap[s.Key] = s.Value
-			}
-		}
-		result = append(result, emap)
 	}
 
 	return result, nil

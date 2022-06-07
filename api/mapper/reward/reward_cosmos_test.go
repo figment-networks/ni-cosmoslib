@@ -11,15 +11,6 @@ import (
 	"go.uber.org/zap/zaptest"
 )
 
-// "MsgWithdrawDelegatorReward"  10510022, 10510043
-// "MsgWithdrawValidatorCommission"  10510010, 10510025
-// "MsgDelegate" 10510041
-// "MsgSetWithdrawAddress" 10510043, 10510066
-// "MsgUndelegate" 10510043 10510063
-// "MsgBeginRedelegate" 10511859 10511900
-
-// multiple rewards https://www.mintscan.io/cosmos/txs/F64A62DE10CED5686AC4C4306EA198F32BA285C4D388EFFC399C12F02351A67D
-
 func TestMapper_MsgDelegate_Cosmos(t *testing.T) {
 	type args struct {
 		msg []byte
@@ -105,7 +96,6 @@ func TestMapper_MsgBeginRedelegate_Cosmos(t *testing.T) {
 				Amounts:      []*rewstruct.Amount{{Text: "1099780uatom", Currency: "uatom", Numeric: []byte("\x10\xc8\x04")}},
 				Rewards:      []*rewstruct.RewardAmount{{Amounts: []*rewstruct.Amount{{Text: "32800uatom", Currency: "uatom", Numeric: []byte("\x80 ")}}, Validator: "cosmosvaloper132juzk0gdmwuxvx4phug7m3ymyatxlh9734g4w"}}},
 		},
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -171,7 +161,6 @@ func TestMapper_MsgWithdrawDelegatorReward_Cosmos(t *testing.T) {
 				ValidatorSrc: "cosmosvaloper1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2h4gvnl7",
 			},
 		},
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -220,7 +209,6 @@ func TestMapper_MsgSetWithdrawAddress_Cosmos(t *testing.T) {
 				RewardRecipients: []string{"cosmos1z8wrnv35mmezpseym0jy7lngvsan2alwn8gma9"},
 			},
 		},
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -296,7 +284,6 @@ func TestMapper_MsgUndelegate_Cosmos(t *testing.T) {
 				RewardRecipients: []string{"cosmos1hvsdf03tl6w5pnfvfv5g8uphjd4wfw2hsucxnd"},
 			},
 		},
-		//TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -348,7 +335,6 @@ func TestMapper_MsgWithdrawValidatorCommission_Cosmos(t *testing.T) {
 				Amounts:      []*rewstruct.Amount{{Text: "36370uatom", Currency: "uatom", Numeric: []byte("\x8e\x12")}},
 			},
 		},
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

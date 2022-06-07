@@ -40,7 +40,7 @@ func TestMapper_MsgDelegate_Osmosis(t *testing.T) {
 			},
 		},
 		{
-			// test height 36 for MsgDelegate event backwards compatibility. Different events and amount units
+			// Test height 36 for MsgDelegate event backwards compatibility. Different events and amount units
 			name: "MsgDelegate_from_height_36",
 			args: args{
 				msg: []byte("\n+osmo1de7qx00pz2j6gn9k88ntxxylelkazfk39gwddy\x122osmovaloper1de7qx00pz2j6gn9k88ntxxylelkazfk3llxw6r\x1a\x12\n\x05uosmo\x12\t500000000"),
@@ -50,7 +50,6 @@ func TestMapper_MsgDelegate_Osmosis(t *testing.T) {
 				},
 				},
 			},
-			// TODO  amount issues / missing accounts
 			wantRev: &rewstruct.RewardTx{
 				Type:         "MsgDelegate",
 				ValidatorDst: "osmovaloper1de7qx00pz2j6gn9k88ntxxylelkazfk3llxw6r",
@@ -58,7 +57,6 @@ func TestMapper_MsgDelegate_Osmosis(t *testing.T) {
 				Amounts:      []*rewstruct.Amount{{Text: "500000000uosmo", Currency: "uosmo", Numeric: []byte("\x1d\xcde\x00")}},
 			},
 		},
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -111,7 +109,7 @@ func TestMapper_MsgBeginRedelegate_Osmosis(t *testing.T) {
 				ValidatorDst: "osmovaloper1t8qckan2yrygq7kl9apwhzfalwzgc2429p8f0s",
 				Amounts:      []*rewstruct.Amount{{Text: "30000000uosmo", Currency: "uosmo", Numeric: []byte("\x01\xc9À")}},
 				Rewards: []*rewstruct.RewardAmount{
-					{Amounts: []*rewstruct.Amount{{Text: "1059808uosmo", Currency: "uosmo", Numeric: []byte("\x10+\xe0")}}, Validator: "osmovaloper1clpqr4nrk4khgkxj78fcwwh6dl3uw4ep88n0y4"},
+					{Amounts: []*rewstruct.Amount{{Text: "1059808uosmo", Currency: "uosmo", Numeric: []byte("\x10+\xe0")}}},
 				},
 			}},
 		{
@@ -135,8 +133,8 @@ func TestMapper_MsgBeginRedelegate_Osmosis(t *testing.T) {
 				Amounts:      []*rewstruct.Amount{{Text: "954871uosmo", Currency: "uosmo", Numeric: []byte("\x0e\x91\xf7")}},
 				// Rewards from each validator was checked by requesting delegations from height 3932418
 				Rewards: []*rewstruct.RewardAmount{
-					{Amounts: []*rewstruct.Amount{{Text: "3111uosmo", Currency: "uosmo", Numeric: []byte("\x0c'")}}, Validator: "osmovaloper12rzd5qr2wmpseypvkjl0spusts0eruw2g35lkn"},
-					{Amounts: []*rewstruct.Amount{{Text: "3910uosmo", Currency: "uosmo", Numeric: []byte("\x0fF")}}, Validator: "osmovaloper1ej2es5fjztqjcd4pwa0zyvaevtjd2y5w37wr9t"},
+					{Amounts: []*rewstruct.Amount{{Text: "3111uosmo", Currency: "uosmo", Numeric: []byte("\x0c'")}}},
+					{Amounts: []*rewstruct.Amount{{Text: "3910uosmo", Currency: "uosmo", Numeric: []byte("\x0fF")}}},
 				},
 			},
 		},
@@ -161,7 +159,6 @@ func TestMapper_MsgBeginRedelegate_Osmosis(t *testing.T) {
 				Amounts:      []*rewstruct.Amount{{Text: "843434uosmo", Currency: "uosmo", Numeric: []byte("\x0cު")}},
 			},
 		},
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -215,8 +212,8 @@ func TestMapper_MsgWithdrawDelegatorReward_Osmosis(t *testing.T) {
 			},
 		},
 		{
-			// Modify Withdraw Address https://www.mintscan.io/osmosis/txs/01844C9906EC71D72EB50F2968D5ADCA4EFA4B861722E66A835AC532DC1101C3
-			// Get Reward https://www.mintscan.io/osmosis/txs/C25F9C53231799E3A75729B2C08BE88BD1A8E88207C36BC82A7308BD2700CDB9
+			// Modify Withdraw Address event: https://www.mintscan.io/osmosis/txs/01844C9906EC71D72EB50F2968D5ADCA4EFA4B861722E66A835AC532DC1101C3
+			// Get Reward event: https://www.mintscan.io/osmosis/txs/C25F9C53231799E3A75729B2C08BE88BD1A8E88207C36BC82A7308BD2700CDB9
 			name: "MsgWithdrawDelegatorReward_from_height_3951103_afer_Modify_Withdraw_Address_from_height_3878913",
 			args: args{
 				msg: []byte("\n+osmo1udv3dqftlrkc5yxqn9tnu7atyg8wnl4e4wm84a\x122osmovaloper1thsw3n94lzxy0knhss9n554zqp4dnfzx78j7sq"),
@@ -237,8 +234,6 @@ func TestMapper_MsgWithdrawDelegatorReward_Osmosis(t *testing.T) {
 				RewardRecipients: []string{"osmo153geppn7520n2kvsl850wxkz5r576n3wxnj0yj"},
 			},
 		},
-		// TODO: Add test cases.
-
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -292,7 +287,6 @@ func TestMapper_MsgUndelegate_Osmosis(t *testing.T) {
 				Rewards:      []*rewstruct.RewardAmount{{Amounts: []*rewstruct.Amount{{Text: "1ibc/BE1BB42D4BE3C30D50B68D7C41DB4DFCE9678E8EF8C539F6E6A9345048894FCC", Currency: "ibc/BE1BB42D4BE3C30D50B68D7C41DB4DFCE9678E8EF8C539F6E6A9345048894FCC", Numeric: []byte("\x01")}, {Text: "1373536uosmo", Currency: "uosmo", Numeric: []byte("\x14\xf5`")}}, Validator: "osmovaloper12zwq8pcmmgwsl95rueqsf65avfg5zcj047ucw6"}},
 			},
 		},
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
