@@ -905,10 +905,12 @@ func (re *RewardsExtraction) fetchInitialAccounts(ctx context.Context, height ui
 func mapClaims(claims []structs.ClaimedReward) (rews []*rewstruct.SimpleReward) {
 	for _, c := range claims {
 		r := &rewstruct.SimpleReward{
-			Account:   c.Account,
-			Validator: c.Validator,
-			Height:    c.Mark,
-			Time:      &rewstruct.Timestamp{Seconds: c.Time.Unix(), Nanos: int32(c.Time.Nanosecond())},
+			Account:          c.Account,
+			Validator:        c.Validator,
+			Height:           c.Mark,
+			Time:             &rewstruct.Timestamp{Seconds: c.Time.Unix(), Nanos: int32(c.Time.Nanosecond())},
+			TxHash:           c.TxHash,
+			RewardRecipients: c.RewardRecipients,
 		}
 		for _, a := range c.ClaimedReward {
 			r.Amounts = append(r.Amounts, &rewstruct.Amount{
