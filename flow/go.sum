@@ -246,8 +246,8 @@ github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5Kwzbycv
 github.com/fatih/color v1.10.0/go.mod h1:ELkj/draVOlAH/xkhN6mQ50Qd0MPOk5AAr3maGEBuJM=
 github.com/felixge/httpsnoop v1.0.1 h1:lvB5Jl89CsZtGIWuTcDM1E/vkVs49/Ml7JJe07l8SPQ=
 github.com/felixge/httpsnoop v1.0.1/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
-github.com/figment-networks/indexing-engine v0.9.19 h1:wue2vI7uGeXrIF55ehDjpLU7XfixkZ0jxf2r0og7u94=
-github.com/figment-networks/indexing-engine v0.9.19/go.mod h1:t7s24ZW7BR1trFxK4EKYwU/xGCg1/G5n5Vvt5xy8nG8=
+github.com/figment-networks/indexing-engine v0.9.21 h1:SBwMmCE4OC6K8PV2iyCkf3otG6sCXwvZP/tyHq9iPHM=
+github.com/figment-networks/indexing-engine v0.9.21/go.mod h1:t7s24ZW7BR1trFxK4EKYwU/xGCg1/G5n5Vvt5xy8nG8=
 github.com/figment-networks/ni-cosmoslib/client v0.1.1 h1:0AsBIC2O87ZyDqHal8+eTjREYiLYW+OASGF7x8Y7fMQ=
 github.com/figment-networks/ni-cosmoslib/client v0.1.1/go.mod h1:dEgaZTUJAsL+E5GzIU7NxNIkhu/MVGFPkT3JI0+PCSs=
 github.com/fjl/memsize v0.0.0-20180418122429-ca190fb6ffbc/go.mod h1:VvhXpOYNQvB+uIk2RvXzuaQtkQJzzIx6lSBe1xv7hi0=
