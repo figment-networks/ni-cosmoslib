@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/cosmos/cosmos-sdk v0.45.4
-	github.com/figment-networks/indexing-engine v0.9.19
+	github.com/figment-networks/indexing-engine v0.9.21
 	github.com/figment-networks/ni-cosmoslib/client v0.1.2
 	github.com/figment-networks/ni-cosmoslib/util v0.0.0-20220606143051-466af0576570
 	github.com/gogo/protobuf v1.3.3
