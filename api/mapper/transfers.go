@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/figment-networks/indexing-engine/structs"
-	"github.com/figment-networks/ni-cosmoslib/api/util"
+	"github.com/figment-networks/ni-cosmoslib/util"
 
 	"github.com/cosmos/cosmos-sdk/types"
 )

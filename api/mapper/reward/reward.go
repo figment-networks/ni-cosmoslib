@@ -15,7 +15,7 @@ import (
 
 	"github.com/figment-networks/ni-cosmoslib/client/cosmosgrpc"
 
-	"github.com/figment-networks/ni-cosmoslib/api/util"
+	"github.com/figment-networks/ni-cosmoslib/util"
 )
 
 /* Osmosis BondedTokensPool and NotBondedTokensPool addresses have been taken from https://docs.osmosis.zone/developing/osmosis-core/modules/
