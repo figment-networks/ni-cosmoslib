@@ -10,7 +10,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.45.4
 	github.com/cosmos/ibc-go/v3 v3.0.0
 	github.com/figment-networks/indexing-engine v0.9.21
-	github.com/figment-networks/ni-cosmoslib/util v0.0.0-20220606143051-466af0576570
+	github.com/figment-networks/ni-cosmoslib/util v0.1.0
 	github.com/gogo/protobuf v1.3.3
 )
 

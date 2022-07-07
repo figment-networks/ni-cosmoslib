@@ -252,8 +252,8 @@ github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYF
 github.com/felixge/httpsnoop v1.0.1 h1:lvB5Jl89CsZtGIWuTcDM1E/vkVs49/Ml7JJe07l8SPQ=
 github.com/figment-networks/indexing-engine v0.9.21 h1:SBwMmCE4OC6K8PV2iyCkf3otG6sCXwvZP/tyHq9iPHM=
 github.com/figment-networks/indexing-engine v0.9.21/go.mod h1:t7s24ZW7BR1trFxK4EKYwU/xGCg1/G5n5Vvt5xy8nG8=
-github.com/figment-networks/ni-cosmoslib/util v0.0.0-20220606143051-466af0576570 h1:LZIUYzvwDDbGMwlVz6LvTxXLw8YYv8U9hOX0VVkSW4w=
-github.com/figment-networks/ni-cosmoslib/util v0.0.0-20220606143051-466af0576570/go.mod h1:+iFZ6mbgfQ+kzbcJpzHuDuATkb8HSvnegxymgAI9VOk=
+github.com/figment-networks/ni-cosmoslib/util v0.1.0 h1:q+def0heWWWit2D2cUDJg43gEsa5+Ce6fb3C6fW6uTc=
+github.com/figment-networks/ni-cosmoslib/util v0.1.0/go.mod h1:dL2Ix4BFUuEcxt+wu8rDhOqJrrYn2zfooUIRFWzr8uc=
 github.com/fogleman/gg v1.2.1-0.20190220221249-0403632d5b90/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
 github.com/fortytw2/leaktest v1.3.0 h1:u8491cBMTQ8ft8aeV+adlcytMZylmA5nnwwkRZjI8vw=
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
