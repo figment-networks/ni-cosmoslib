@@ -9,6 +9,7 @@ import (
 	"math"
 	"math/big"
 	"strings"
+	"sync"
 	"time"
 
 	ttypes "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -888,20 +889,13 @@ func (re *RewardsExtraction) fetchInitialAccounts(ctx context.Context, height ui
 	g, ctx := errgroup.WithContext(ctx)
 	g.SetLimit(concurrentRequests)
 
-	accountAddresses := make(chan string)
-	defer close(accountAddresses)
 	accountsMap := make(map[string]interface{})
-	// collect account addresses
-	go func() {
-		for account := range accountAddresses {
-			accountsMap[account] = struct{}{}
-		}
-	}()
-
+	accountsMutex := sync.Mutex{}
 	// produce account addresses with bounded concurrency specified by concurrentRequests
 	for _, v := range validators {
-		v := v
+		v := v // https://golang.org/doc/faq#closures_and_goroutines
 		g.Go(func() error {
+			// exit early if any other goroutine has an error
 			if err := ctx.Err(); err != nil {
 				return ctx.Err()
 			}
@@ -914,19 +908,16 @@ func (re *RewardsExtraction) fetchInitialAccounts(ctx context.Context, height ui
 				}
 				return fmt.Errorf("Error getting delegators %w", err)
 			}
+			accountsMutex.Lock()
+			defer accountsMutex.Unlock()
 			for _, d := range deleg {
-				select {
-				case accountAddresses <- d.Delegation.DelegatorAddress:
-				case <-ctx.Done():
-					return ctx.Err()
-				}
+				accountsMap[d.Delegation.DelegatorAddress] = struct{}{}
+
 			}
 			return nil
 		})
 	}
-
-	err = g.Wait()
-	if err != nil {
+	if err = g.Wait(); err != nil {
 		return nil, err
 	}
 
