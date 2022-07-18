@@ -12,6 +12,7 @@ import (
 	"time"
 
 	ttypes "github.com/tendermint/tendermint/proto/tendermint/types"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"
@@ -883,22 +884,52 @@ func (re *RewardsExtraction) fetchInitialAccounts(ctx context.Context, height ui
 		return nil, fmt.Errorf("Error getting validator lists %w", err)
 	}
 
+	const concurrentRequests = 50
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(concurrentRequests)
+
+	accountAddresses := make(chan string)
+	defer close(accountAddresses)
 	accountsMap := make(map[string]interface{})
-	a := struct{}{}
+	// collect account addresses
+	go func() {
+		for account := range accountAddresses {
+			accountsMap[account] = struct{}{}
+		}
+	}()
+
+	// produce account addresses with bounded concurrency specified by concurrentRequests
 	for _, v := range validators {
-		deleg, err := re.client.GetDelegators(ctx, height, v.OperatorAddress, 0, re.Cfg.DelegatorFetchPage)
-		if err != nil {
-			// GetHeightValidators can produce Delegators not at this height
-			// this is ok b/c we are just trying to fetch an initial list at this height.
-			if strings.Contains(err.Error(), "validator does not exist") {
-				continue
+		v := v
+		g.Go(func() error {
+			if err := ctx.Err(); err != nil {
+				return ctx.Err()
 			}
-			return accounts, fmt.Errorf("Error getting delegators %w", err)
-		}
-		for _, d := range deleg {
-			accountsMap[d.Delegation.DelegatorAddress] = a // dedupe
-		}
+			deleg, err := re.client.GetDelegators(ctx, height, v.OperatorAddress, 0, re.Cfg.DelegatorFetchPage)
+			if err != nil {
+				// GetHeightValidators can produce Delegators not at this height
+				// this is ok b/c we are just trying to fetch an initial list at this height.
+				if strings.Contains(err.Error(), "validator does not exist") {
+					return nil
+				}
+				return fmt.Errorf("Error getting delegators %w", err)
+			}
+			for _, d := range deleg {
+				select {
+				case accountAddresses <- d.Delegation.DelegatorAddress:
+				case <-ctx.Done():
+					return ctx.Err()
+				}
+			}
+			return nil
+		})
 	}
+
+	err = g.Wait()
+	if err != nil {
+		return nil, err
+	}
+
 	return accountsMap, nil
 }
 
