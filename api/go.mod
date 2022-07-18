@@ -3,7 +3,7 @@ module github.com/figment-networks/ni-cosmoslib/api
 go 1.18
 
 require (
-	github.com/cosmos/cosmos-sdk v0.45.4
+	github.com/cosmos/cosmos-sdk v0.45.6
 	github.com/figment-networks/indexing-engine v0.9.21
 	github.com/figment-networks/ni-cosmoslib/client v0.1.2
 	github.com/figment-networks/ni-cosmoslib/util v0.1.0

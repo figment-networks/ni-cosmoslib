@@ -107,6 +107,8 @@ func AddSubEvent(tev *structs.TransactionEvent, m *codec_types.Any, lg types.ABC
 			ev, err = ma.GovVoteToSub(m.Value)
 		case "MsgSubmitProposal":
 			ev, err = ma.GovSubmitProposalToSub(m.Value, lg)
+		case "MsgVoteWeighted":
+			ev, err = ma.GovMsgVoteWeighted(m.Value, lg)
 		default:
 			err = fmt.Errorf("problem with cosmos event %s - %s: %w", msgRoute, msgType, util.ErrUnknownMessageType)
 		}

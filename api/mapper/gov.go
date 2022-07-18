@@ -132,3 +132,34 @@ func (mapper *Mapper) GovSubmitProposalToSub(msg []byte, lg types.ABCIMessageLog
 
 	return se, nil
 }
+
+// MsgVoteWeighted ransforms gov.MsgVoteWeighted sdk messages to SubsetEvent
+func (mapper *Mapper) GovMsgVoteWeighted(msg []byte, lg types.ABCIMessageLog) (se structs.SubsetEvent, err error) {
+	sp := &gov.MsgVoteWeighted{}
+	if err := proto.Unmarshal(msg, sp); err != nil {
+		return se, fmt.Errorf("Not a vote_weighted type: %w", err)
+	}
+
+	se = structs.SubsetEvent{
+		Type:       []string{"vote_weighted"},
+		Module:     "gov",
+		Additional: make(map[string][]string),
+	}
+
+	err = produceTransfers(&se, "send", "", lg)
+	if err != nil {
+		return se, err
+	}
+
+	se.Additional["voter"] = []string{sp.Voter}
+	se.Additional["proposal_id"] = []string{strconv.FormatUint(sp.ProposalId, 10)}
+	options := []string{}
+	weights := []string{}
+	for _, option := range sp.Options {
+		options = append(options, strconv.FormatInt(int64(option.Option), 10))
+		weights = append(weights, option.Weight.String())
+	}
+	se.Additional["options"] = options
+	se.Additional["weights"] = weights
+	return se, nil
+}
