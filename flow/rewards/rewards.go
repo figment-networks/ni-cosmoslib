@@ -9,9 +9,11 @@ import (
 	"math"
 	"math/big"
 	"strings"
+	"sync"
 	"time"
 
 	ttypes "github.com/tendermint/tendermint/proto/tendermint/types"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"
@@ -883,22 +885,42 @@ func (re *RewardsExtraction) fetchInitialAccounts(ctx context.Context, height ui
 		return nil, fmt.Errorf("Error getting validator lists %w", err)
 	}
 
+	const concurrentRequests = 50
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(concurrentRequests)
+
 	accountsMap := make(map[string]interface{})
-	a := struct{}{}
+	accountsMutex := sync.Mutex{}
+	// produce account addresses with bounded concurrency specified by concurrentRequests
 	for _, v := range validators {
-		deleg, err := re.client.GetDelegators(ctx, height, v.OperatorAddress, 0, re.Cfg.DelegatorFetchPage)
-		if err != nil {
-			// GetHeightValidators can produce Delegators not at this height
-			// this is ok b/c we are just trying to fetch an initial list at this height.
-			if strings.Contains(err.Error(), "validator does not exist") {
-				continue
+		v := v // https://golang.org/doc/faq#closures_and_goroutines
+		g.Go(func() error {
+			// exit early if any other goroutine has an error
+			if err := ctx.Err(); err != nil {
+				return ctx.Err()
 			}
-			return accounts, fmt.Errorf("Error getting delegators %w", err)
-		}
-		for _, d := range deleg {
-			accountsMap[d.Delegation.DelegatorAddress] = a // dedupe
-		}
+			deleg, err := re.client.GetDelegators(ctx, height, v.OperatorAddress, 0, re.Cfg.DelegatorFetchPage)
+			if err != nil {
+				// GetHeightValidators can produce Delegators not at this height
+				// this is ok b/c we are just trying to fetch an initial list at this height.
+				if strings.Contains(err.Error(), "validator does not exist") {
+					return nil
+				}
+				return fmt.Errorf("Error getting delegators %w", err)
+			}
+			accountsMutex.Lock()
+			defer accountsMutex.Unlock()
+			for _, d := range deleg {
+				accountsMap[d.Delegation.DelegatorAddress] = struct{}{}
+
+			}
+			return nil
+		})
 	}
+	if err = g.Wait(); err != nil {
+		return nil, err
+	}
+
 	return accountsMap, nil
 }
 

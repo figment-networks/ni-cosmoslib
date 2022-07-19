@@ -8,6 +8,7 @@ require (
 	github.com/figment-networks/ni-cosmoslib/client v0.1.1
 	github.com/tendermint/tendermint v0.34.14
 	go.uber.org/zap v1.17.0
+	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
 	google.golang.org/protobuf v1.27.1
 )
 
